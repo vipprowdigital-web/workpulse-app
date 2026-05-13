@@ -1,4 +1,3 @@
-
 import {
   View,
   Text,
@@ -23,31 +22,15 @@ export default function AuthScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // ── Auth check on app load ──────────────────────
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const forceLogout = await SecureStore.getItemAsync("forceLogout");
-        if (forceLogout === "true") {
-          await SecureStore.deleteItemAsync("forceLogout");
-          setChecking(false);
-          return;
-        }
-        const token = await SecureStore.getItemAsync("token");
-        const role = await SecureStore.getItemAsync("role");
-        if (token && role) {
-          router.replace("/(tabs)");
-          return;
-        }
-      } catch (e) {
-        console.log("Auth check error:", e);
-      }
+    const clearSession = async () => {
+      await SecureStore.deleteItemAsync("token");
+      await SecureStore.deleteItemAsync("role");
       setChecking(false);
     };
-    checkAuth();
+    clearSession();
   }, []);
 
-  // ── Show spinner while checking ─────────────────
   if (checking) {
     return (
       <View style={styles.splashContainer}>
@@ -57,12 +40,8 @@ export default function AuthScreen() {
     );
   }
 
-  // ── Admin Login ─────────────────────────────────
   const handleAdminLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Validation", "Enter email & password");
-      return;
-    }
+    if (!email || !password) { Alert.alert("Validation", "Enter email & password"); return; }
     try {
       const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/auth/login`, {
         method: "POST",
@@ -84,17 +63,12 @@ export default function AuthScreen() {
       await SecureStore.setItemAsync("adminName", data.admin.companyName);
       router.replace("/(tabs)");
     } catch (error) {
-      console.log("ADMIN LOGIN ERROR:", error);
       Alert.alert("Error", "Unable to connect to server");
     }
   };
 
-  // ── User Login ──────────────────────────────────
   const handleUserLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Validation", "Please enter email and password");
-      return;
-    }
+    if (!email || !password) { Alert.alert("Validation", "Please enter email and password"); return; }
     try {
       const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/user/login`, {
         method: "POST",
@@ -115,7 +89,6 @@ export default function AuthScreen() {
       await SecureStore.setItemAsync("userName", data.user.name || "User");
       router.replace("/(tabs)");
     } catch (error) {
-      console.log("USER LOGIN ERROR:", error);
       Alert.alert("Error", "Unable to connect to server");
     }
   };
@@ -145,7 +118,6 @@ export default function AuthScreen() {
             <Text style={styles.toggleText}>Admin</Text>
           )}
         </TouchableOpacity>
-
         <TouchableOpacity style={styles.toggleBtn} onPress={() => handleToggle(false)}>
           {!isAdmin ? (
             <LinearGradient colors={["#5f00be", "#00A693"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.activeToggle}>
@@ -157,14 +129,12 @@ export default function AuthScreen() {
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.subtitle}>
-        {isAdmin ? "Admin Account" : "User Account"}
-      </Text>
+      <Text style={styles.subtitle}>{isAdmin ? "Admin Account" : "User Account"}</Text>
 
       {/* Email */}
       <Text style={styles.label}>{isAdmin ? "Email Address" : "Email"}</Text>
       <View style={styles.inputBox}>
-        <Ionicons name="mail-outline" size={20} color="#9CA3AF" />
+        <Ionicons name="mail-outline" size={20} color="#5f00be" />
         <TextInput
           placeholder="Enter your email"
           placeholderTextColor="#9CA3AF"
@@ -179,7 +149,7 @@ export default function AuthScreen() {
       {/* Password */}
       <Text style={styles.label}>Password</Text>
       <View style={styles.inputBox}>
-        <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" />
+        <Ionicons name="lock-closed-outline" size={20} color="#5f00be" />
         <TextInput
           placeholder="Enter your password"
           placeholderTextColor="#9CA3AF"
@@ -190,7 +160,6 @@ export default function AuthScreen() {
         />
       </View>
 
-      {/* Admin extra links */}
       {isAdmin && (
         <View style={styles.passwordRow}>
           <TouchableOpacity onPress={() => router.push("/(auth)/set-password")}>
@@ -202,13 +171,11 @@ export default function AuthScreen() {
         </View>
       )}
 
-      {/* Login Button */}
       <Button
         title={isAdmin ? "Admin Sign In" : "User Login"}
         onPress={isAdmin ? handleAdminLogin : handleUserLogin}
       />
 
-      {/* Admin Signup */}
       {isAdmin && (
         <>
           <View style={styles.dividerRow}>
@@ -216,10 +183,7 @@ export default function AuthScreen() {
             <Text style={styles.dividerText}>Don't have an account?</Text>
             <View style={styles.line} />
           </View>
-          <Button
-            title="Sign Up"
-            onPress={() => router.push("/(auth)/admin-signup")}
-          />
+          <Button title="Sign Up" onPress={() => router.push("/(auth)/admin-signup")} />
         </>
       )}
     </ScrollView>
@@ -227,10 +191,9 @@ export default function AuthScreen() {
 }
 
 const styles = StyleSheet.create({
-  // Splash / loading screen
   splashContainer: {
     flex: 1,
-    backgroundColor: "#d3d7df",
+    backgroundColor: "#ccdbf7",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -240,11 +203,9 @@ const styles = StyleSheet.create({
     color: "#5f00be",
     letterSpacing: 1,
   },
-
-  // Main screen
   container: {
     flexGrow: 1,
-    backgroundColor: "#d3d7df",
+    backgroundColor: "#ccdbf7",
     padding: 20,
     justifyContent: "center",
   },
@@ -257,53 +218,56 @@ const styles = StyleSheet.create({
   },
   toggleContainer: {
     flexDirection: "row",
-    backgroundColor: "#0F2A5F",
+    backgroundColor: "#b8c8e0",
     borderRadius: 30,
     padding: 5,
     marginBottom: 10,
   },
   toggleBtn: { flex: 1 },
-  activeToggle: {
-    padding: 12,
-    borderRadius: 25,
-    alignItems: "center",
-  },
-  toggleText: {
-    textAlign: "center",
-    padding: 12,
-    color: "#9CA3AF",
-    fontWeight: "600",
-  },
+  activeToggle: { padding: 12, borderRadius: 25, alignItems: "center" },
+  toggleText: { textAlign: "center", padding: 12, color: "#6B7280", fontWeight: "600" },
   activeText: { color: "#fff", fontWeight: "bold" },
   subtitle: {
-    color: "#9CA3AF",
+    color: "#374151",
     textAlign: "center",
     fontSize: 13,
     marginBottom: 24,
   },
-  label: { color: "#CBD5F5", marginBottom: 6, fontSize: 14 },
+  label: {
+    color: "#1f2937",
+    marginBottom: 6,
+    fontSize: 14,
+    fontWeight: "600",
+  },
   inputBox: {
     flexDirection: "row",
     alignItems: "center",
     borderRadius: 12,
     padding: 14,
     marginBottom: 15,
-    backgroundColor: "#0F2A5F",
+    backgroundColor: "#dce8f5",
+    borderWidth: 1,
+    borderColor: "#b8c8e0",
   },
-  input: { marginLeft: 10, flex: 1, color: "#fff" },
+  input: {
+    marginLeft: 10,
+    flex: 1,
+    color: "#111827",       // ← dark color — clearly visible
+    fontSize: 14,
+  },
   passwordRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 20,
   },
-  linkText: { color: "#00A693", fontWeight: "600" },
+  linkText: { color: "#5f00be", fontWeight: "600" },
   dividerRow: {
     flexDirection: "row",
     alignItems: "center",
     marginVertical: 25,
   },
-  line: { flex: 1, height: 1, backgroundColor: "#1E3A8A" },
-  dividerText: { marginHorizontal: 10, color: "#9CA3AF" },
+  line: { flex: 1, height: 1, backgroundColor: "#b8c8e0" },
+  dividerText: { marginHorizontal: 10, color: "#6B7280", fontSize: 13 },
 });
 
 // import {

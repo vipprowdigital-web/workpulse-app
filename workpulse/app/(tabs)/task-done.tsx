@@ -110,7 +110,7 @@ function UserTaskDoneScreen() {
       <LinearGradient colors={["#081B43", "#0F2A5F"]} style={styles.topBar}>
         <View>
           <Text style={styles.topBarTitle}>Completed Tasks</Text>
-          <Text style={styles.topBarSub}>Aapke saare done tasks</Text>
+          <Text style={styles.topBarSub}>All tasks are done</Text>
         </View>
         <View style={[styles.badge, { backgroundColor: "#1D9E75" }]}>
           <Text style={styles.badgeText}>{tasks.length} done</Text>
@@ -125,8 +125,8 @@ function UserTaskDoneScreen() {
       ) : tasks.length === 0 ? (
         <View style={styles.centered}>
           <Text style={{ fontSize: 40 }}>✅</Text>
-          <Text style={styles.emptyTitle}>Koi completed task nahi hai abhi</Text>
-          <Text style={styles.emptySubtitle}>Jab aap tasks complete karenge, yahan dikhenge</Text>
+          <Text style={styles.emptyTitle}>no task completed</Text>
+          <Text style={styles.emptySubtitle}>Jwhen you completed a task show here</Text>
         </View>
       ) : (
         <ScrollView
@@ -355,7 +355,7 @@ function AdminTaskDoneScreen() {
       {loading ? (
         <View style={styles.centered}><ActivityIndicator size="large" color="#081B43" /><Text style={styles.loadingText}>Tasks load ho rahe hain...</Text></View>
       ) : tasks.length === 0 ? (
-        <View style={styles.centered}><Text style={styles.emptyTitle}>Koi completed task nahi hai abhi</Text></View>
+        <View style={styles.centered}><Text style={styles.emptyTitle}>No tasks</Text></View>
       ) : (
         <ScrollView contentContainerStyle={styles.feed} showsVerticalScrollIndicator={false} onScrollBeginDrag={closeAllMenus}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#081B43"]} />}>
@@ -373,7 +373,7 @@ function AdminTaskDoneScreen() {
           <View style={styles.modalSheet}>
             <View style={styles.modalHandle} />
             <Text style={styles.modalTitle}>Review & Reassign Task</Text>
-            <Text style={styles.modalSub}>Admin ka feedback likhein — task wapas user ko reassign ho jayega</Text>
+            <Text style={styles.modalSub}>Adminfeedback  — task Reassigned User</Text>
             {activeTask && (
               <View style={styles.modalForBox}>
                 <LinearGradient colors={getAvatarConfig(activeTask.assignedTo?.name ?? "U").colors} style={styles.modalAvatar}>

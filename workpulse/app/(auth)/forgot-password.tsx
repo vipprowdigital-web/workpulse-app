@@ -6,6 +6,7 @@ import {
 } from "react-native";
 import { Stack } from "expo-router";
 import Input from "@/components/input";
+import Button from "@/components/button";
 
 export default function ForgotPassword() {
   return (
@@ -38,9 +39,8 @@ export default function ForgotPassword() {
         />
 
         {/* BUTTON */}
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Send Password</Text>
-        </TouchableOpacity>
+           <Button title="Send Password" />
+      
 
       </View>
     </>
@@ -49,7 +49,7 @@ export default function ForgotPassword() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#081B43",
+    backgroundColor: "#dde2eb",
     padding: 20,
     justifyContent: "center",
   },
@@ -57,18 +57,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: "bold",
-    color: "#FFFFFF",
+    color: "#1a1717",
     textAlign: "center",
     marginBottom: 30,
   },
 
-  button: {
-    backgroundColor: "#00A693",
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 20,
-  },
+ 
 
   buttonText: {
     color: "#FFFFFF",

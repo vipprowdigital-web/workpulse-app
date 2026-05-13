@@ -1,3 +1,4 @@
+
 import Project from "../models/Project.js";
 import Task from "../models/Task.js";
 
@@ -19,6 +20,7 @@ export const addProject = async (req, res) => {
       team: team || null,
       dueDate: dueDate || null,
       createdBy,
+      companyId: req.user.companyId,   // ← companyId save karo
     });
 
     const populatedProject = await Project.findById(project._id)
@@ -38,10 +40,12 @@ export const addProject = async (req, res) => {
   }
 };
 
-// Get Projects
+// Get Projects — sirf apni company ke
 export const getProjects = async (req, res) => {
   try {
-    const projects = await Project.find()
+    const projects = await Project.find({
+      companyId: req.user.companyId,   // ← filter by companyId
+    })
       .populate({
         path: "team",
         populate: {
@@ -59,10 +63,12 @@ export const getProjects = async (req, res) => {
   }
 };
 
-// Project Status
+// Project Status — sirf apni company ke
 export const getProjectStatus = async (req, res) => {
   try {
-    const projects = await Project.find()
+    const projects = await Project.find({
+      companyId: req.user.companyId,   // ← filter by companyId
+    })
       .populate({
         path: "team",
         populate: {
@@ -75,7 +81,10 @@ export const getProjectStatus = async (req, res) => {
 
     const result = await Promise.all(
       projects.map(async (project) => {
-        const tasks = await Task.find({ project: project._id })
+        const tasks = await Task.find({
+          project: project._id,
+          companyId: req.user.companyId,  // ← tasks bhi filter karo
+        })
           .populate({
             path: "team",
             populate: {
@@ -89,18 +98,13 @@ export const getProjectStatus = async (req, res) => {
           .sort({ createdAt: -1 });
 
         const totalTasks = tasks.length;
-        const completedTasks = tasks.filter(
-          (task) => task.status === "Completed"
-        ).length;
-        const pendingTasks = tasks.filter(
-          (task) => task.status === "Pending"
-        ).length;
+        const completedTasks = tasks.filter(t => t.status === "Completed").length;
+        const pendingTasks = tasks.filter(t => t.status === "Pending").length;
 
-        const completedPercent =
-          totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-
-        const pendingPercent =
-          totalTasks > 0 ? Math.round((pendingTasks / totalTasks) * 100) : 0;
+        const completedPercent = totalTasks > 0
+          ? Math.round((completedTasks / totalTasks) * 100) : 0;
+        const pendingPercent = totalTasks > 0
+          ? Math.round((pendingTasks / totalTasks) * 100) : 0;
 
         return {
           _id: project._id,
@@ -124,6 +128,134 @@ export const getProjectStatus = async (req, res) => {
     res.status(500).json({ message: "Error fetching project status" });
   }
 };
+
+
+// import Project from "../models/Project.js";
+// import Task from "../models/Task.js";
+
+// // Add Project
+// export const addProject = async (req, res) => {
+//   try {
+//     const { name, team, dueDate, createdBy } = req.body;
+
+//     if (!name) {
+//       return res.status(400).json({ message: "Project name is required" });
+//     }
+
+//     if (!createdBy) {
+//       return res.status(400).json({ message: "createdBy is required" });
+//     }
+
+//     const project = await Project.create({
+//       name,
+//       team: team || null,
+//       dueDate: dueDate || null,
+//       createdBy,
+//     });
+
+//     const populatedProject = await Project.findById(project._id)
+//       .populate({
+//         path: "team",
+//         populate: {
+//           path: "members",
+//           select: "name email mobileNo department",
+//         },
+//       })
+//       .populate("createdBy", "companyName email");
+
+//     res.status(201).json(populatedProject);
+//   } catch (error) {
+//     console.log("Error adding project:", error);
+//     res.status(500).json({ message: "Error adding project" });
+//   }
+// };
+
+// // Get Projects
+// export const getProjects = async (req, res) => {
+//   try {
+//     const projects = await Project.find()
+//       .populate({
+//         path: "team",
+//         populate: {
+//           path: "members",
+//           select: "name email mobileNo department",
+//         },
+//       })
+//       .populate("createdBy", "companyName email")
+//       .sort({ createdAt: -1 });
+
+//     res.json(projects);
+//   } catch (error) {
+//     console.log("Error fetching projects:", error);
+//     res.status(500).json({ message: "Error fetching projects" });
+//   }
+// };
+
+// // Project Status
+// export const getProjectStatus = async (req, res) => {
+//   try {
+//     const projects = await Project.find()
+//       .populate({
+//         path: "team",
+//         populate: {
+//           path: "members",
+//           select: "name email mobileNo department",
+//         },
+//       })
+//       .populate("createdBy", "companyName email")
+//       .sort({ createdAt: -1 });
+
+//     const result = await Promise.all(
+//       projects.map(async (project) => {
+//         const tasks = await Task.find({ project: project._id })
+//           .populate({
+//             path: "team",
+//             populate: {
+//               path: "members",
+//               select: "name email mobileNo department",
+//             },
+//           })
+//           .populate("project")
+//           .populate("assignedTo", "name email mobileNo department")
+//           .populate("createdBy", "companyName email")
+//           .sort({ createdAt: -1 });
+
+//         const totalTasks = tasks.length;
+//         const completedTasks = tasks.filter(
+//           (task) => task.status === "Completed"
+//         ).length;
+//         const pendingTasks = tasks.filter(
+//           (task) => task.status === "Pending"
+//         ).length;
+
+//         const completedPercent =
+//           totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+//         const pendingPercent =
+//           totalTasks > 0 ? Math.round((pendingTasks / totalTasks) * 100) : 0;
+
+//         return {
+//           _id: project._id,
+//           name: project.name,
+//           dueDate: project.dueDate || null,
+//           team: project.team,
+//           createdBy: project.createdBy,
+//           totalTasks,
+//           completedTasks,
+//           pendingTasks,
+//           completedPercent,
+//           pendingPercent,
+//           tasks,
+//         };
+//       })
+//     );
+
+//     res.json(result);
+//   } catch (error) {
+//     console.log("Error fetching project status:", error);
+//     res.status(500).json({ message: "Error fetching project status" });
+//   }
+// };
 
 
 // import Project from "../models/Project.js";

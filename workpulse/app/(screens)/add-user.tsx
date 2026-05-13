@@ -1,12 +1,22 @@
 import React, { useState, useEffect } from "react";
 import {
-  View, Text, StyleSheet, SafeAreaView, ScrollView,
-  TextInput, Alert, ActivityIndicator, TouchableOpacity, Modal,
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+  TextInput,
+  Alert,
+  ActivityIndicator,
+  TouchableOpacity,
+  Modal,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as SecureStore from "expo-secure-store";
 import { Ionicons } from "@expo/vector-icons";
 import Button from "@/components/button";
+
+
 
 type Department = { _id: string; name: string };
 
@@ -120,19 +130,26 @@ export default function AddUserScreen() {
   };
 
   return (
+    
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.wrapper} showsVerticalScrollIndicator={false}>
+
+      <ScrollView
+        contentContainerStyle={styles.wrapper}
+        showsVerticalScrollIndicator={false}
+      >
         <LinearGradient
           colors={["#081B43", "#5f00be", "#127a6e"]}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={styles.topCard}
         >
           <Text style={styles.topTitle}>Add User</Text>
-          <Text style={styles.topSubTitle}>Create a new user account manually</Text>
+          <Text style={styles.topSubTitle}>
+            Create a new user account manually
+          </Text>
         </LinearGradient>
 
         <View style={styles.formCard}>
-
           {/* Department Picker */}
           <Text style={styles.label}>Department</Text>
           <View style={styles.deptRow}>
@@ -141,7 +158,12 @@ export default function AddUserScreen() {
               onPress={() => setPickerVisible(true)}
               activeOpacity={0.7}
             >
-              <Text style={[styles.deptPickerText, !department && { color: "#9CA3AF" }]}>
+              <Text
+                style={[
+                  styles.deptPickerText,
+                  !department && { color: "#9CA3AF" },
+                ]}
+              >
                 {department || "Select Department"}
               </Text>
               <Ionicons name="chevron-down" size={18} color="#6B7280" />
@@ -157,26 +179,67 @@ export default function AddUserScreen() {
           </View>
 
           <Text style={styles.label}>Name</Text>
-          <TextInput style={styles.input} placeholder="Enter full name" placeholderTextColor="#7A7A7A" value={name} onChangeText={setName} />
+          <TextInput
+            style={styles.input}
+            placeholder="Enter full name"
+            placeholderTextColor="#7A7A7A"
+            value={name}
+            onChangeText={setName}
+          />
 
           <Text style={styles.label}>Mobile Number</Text>
-          <TextInput style={styles.input} placeholder="Enter mobile number" placeholderTextColor="#7A7A7A" keyboardType="phone-pad" value={mobileNo} onChangeText={setMobileNo} />
+          <TextInput
+            style={styles.input}
+            placeholder="Enter mobile number"
+            placeholderTextColor="#7A7A7A"
+            keyboardType="phone-pad"
+            value={mobileNo}
+            onChangeText={setMobileNo}
+          />
 
           <Text style={styles.label}>Email ID</Text>
-          <TextInput style={styles.input} placeholder="Enter email address" placeholderTextColor="#7A7A7A" keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
+          <TextInput
+            style={styles.input}
+            placeholder="Enter email address"
+            placeholderTextColor="#7A7A7A"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
+          />
 
           <Text style={styles.label}>Password</Text>
-          <TextInput style={styles.input} placeholder="Create password" placeholderTextColor="#7A7A7A" secureTextEntry value={password} onChangeText={setPassword} />
+          <TextInput
+            style={styles.input}
+            placeholder="Create password"
+            placeholderTextColor="#7A7A7A"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+          />
 
           <View style={styles.buttonWrap}>
-            <Button title={loading ? "Creating..." : "Create Account"} onPress={handleCreateUser} loading={loading} />
+            <Button
+              title={loading ? "Creating..." : "Create Account"}
+              onPress={handleCreateUser}
+              loading={loading}
+            />
           </View>
-          {loading && <View style={styles.loaderWrap}><ActivityIndicator size="small" color="#5f00be" /></View>}
+          {loading && (
+            <View style={styles.loaderWrap}>
+              <ActivityIndicator size="small" color="#5f00be" />
+            </View>
+          )}
         </View>
       </ScrollView>
 
       {/* Department Picker Modal */}
-      <Modal visible={pickerVisible} transparent animationType="slide" onRequestClose={() => setPickerVisible(false)}>
+      <Modal
+        visible={pickerVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPickerVisible(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalSheet}>
             <View style={styles.modalHandle} />
@@ -190,24 +253,40 @@ export default function AddUserScreen() {
               {departments.length === 0 ? (
                 <View style={styles.emptyDept}>
                   <Ionicons name="business-outline" size={36} color="#CBD5E1" />
-                  <Text style={styles.emptyDeptText}>Koi department nahi hai{"\n"}Pehle department banao</Text>
+                  <Text style={styles.emptyDeptText}>
+                    there is no department{"\n"}create department
+                  </Text>
                 </View>
               ) : (
                 departments.map((dept) => (
                   <TouchableOpacity
                     key={dept._id}
-                    style={[styles.deptOption, department === dept.name && styles.deptOptionActive]}
+                    style={[
+                      styles.deptOption,
+                      department === dept.name && styles.deptOptionActive,
+                    ]}
                     onPress={() => {
                       setDepartment(dept.name);
                       setDepartmentId(dept._id);
                       setPickerVisible(false);
                     }}
                   >
-                    <Ionicons name="layers-outline" size={18} color={department === dept.name ? "#fff" : "#5f00be"} />
-                    <Text style={[styles.deptOptionText, department === dept.name && { color: "#fff" }]}>
+                    <Ionicons
+                      name="layers-outline"
+                      size={18}
+                      color={department === dept.name ? "#fff" : "#5f00be"}
+                    />
+                    <Text
+                      style={[
+                        styles.deptOptionText,
+                        department === dept.name && { color: "#fff" },
+                      ]}
+                    >
                       {dept.name}
                     </Text>
-                    {department === dept.name && <Ionicons name="checkmark" size={18} color="#fff" />}
+                    {department === dept.name && (
+                      <Ionicons name="checkmark" size={18} color="#fff" />
+                    )}
                   </TouchableOpacity>
                 ))
               )}
@@ -217,7 +296,12 @@ export default function AddUserScreen() {
       </Modal>
 
       {/* Create New Department Modal */}
-      <Modal visible={deptModalVisible} transparent animationType="slide" onRequestClose={() => setDeptModalVisible(false)}>
+      <Modal
+        visible={deptModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setDeptModalVisible(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={[styles.modalSheet, { maxHeight: "40%" }]}>
             <View style={styles.modalHandle} />
@@ -243,10 +327,13 @@ export default function AddUserScreen() {
                 disabled={creatingDept}
                 activeOpacity={0.8}
               >
-                {creatingDept
-                  ? <ActivityIndicator size="small" color="#fff" />
-                  : <Text style={styles.createDeptBtnText}>Create Department</Text>
-                }
+                {creatingDept ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.createDeptBtnText}>
+                    Create Department
+                  </Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -258,34 +345,131 @@ export default function AddUserScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F3F7FF" },
-  wrapper: { padding: 16, paddingBottom: 30 },
-  topCard: { borderRadius: 22, padding: 20, marginTop: 10, marginBottom: 18 },
+  wrapper: { padding: 16, paddingBottom: 30, paddingTop: 70  },
+  topCard: { borderRadius: 22, padding: 20, marginTop: 20, marginBottom: 18 },
   topTitle: { color: "#fff", fontSize: 24, fontWeight: "800" },
   topSubTitle: { color: "rgba(255,255,255,0.85)", fontSize: 14, marginTop: 6 },
-  formCard: { backgroundColor: "#fff", borderRadius: 22, padding: 18, shadowColor: "#081B43", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 6 },
-  label: { fontSize: 14, fontWeight: "700", color: "#081B43", marginBottom: 8, marginTop: 10 },
-  input: { height: 52, borderWidth: 1, borderColor: "#D8E2F0", borderRadius: 14, paddingHorizontal: 14, fontSize: 14, color: "#081B43", backgroundColor: "#F9FBFF" },
+  formCard: {
+    backgroundColor: "#fff",
+    borderRadius: 22,
+    padding: 18,
+    shadowColor: "#081B43",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#081B43",
+    marginBottom: 8,
+    marginTop: 10,
+  },
+  input: {
+    height: 52,
+    borderWidth: 1,
+    borderColor: "#D8E2F0",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    fontSize: 14,
+    color: "#081B43",
+    backgroundColor: "#F9FBFF",
+  },
   deptRow: { flexDirection: "row", gap: 10 },
-  deptPicker: { flex: 1, height: 52, borderWidth: 1, borderColor: "#D8E2F0", borderRadius: 14, paddingHorizontal: 14, backgroundColor: "#F9FBFF", flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  deptPicker: {
+    flex: 1,
+    height: 52,
+    borderWidth: 1,
+    borderColor: "#D8E2F0",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    backgroundColor: "#F9FBFF",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   deptPickerText: { fontSize: 14, color: "#081B43", flex: 1 },
-  addDeptBtn: { width: 52, height: 52, borderRadius: 14, backgroundColor: "#5f00be", justifyContent: "center", alignItems: "center" },
+  addDeptBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: "#5f00be",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   buttonWrap: { marginTop: 22 },
   loaderWrap: { marginTop: 12, alignItems: "center" },
 
   // Modals
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)", justifyContent: "flex-end" },
-  modalSheet: { backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "75%", paddingHorizontal: 18, paddingBottom: 10 },
-  modalHandle: { width: 40, height: 4, backgroundColor: "#CFD8DC", borderRadius: 2, alignSelf: "center", marginTop: 10, marginBottom: 4 },
-  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: "#F0F4F8", marginBottom: 10 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    justifyContent: "flex-end",
+  },
+  modalSheet: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: "75%",
+    paddingHorizontal: 18,
+    paddingBottom: 10,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: "#CFD8DC",
+    borderRadius: 2,
+    alignSelf: "center",
+    marginTop: 10,
+    marginBottom: 4,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F4F8",
+    marginBottom: 10,
+  },
   modalTitle: { fontSize: 17, fontWeight: "800", color: "#1A2E44" },
-  deptOption: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, borderRadius: 12, marginBottom: 6, backgroundColor: "#F5F7FF" },
+  deptOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 6,
+    backgroundColor: "#F5F7FF",
+  },
   deptOptionActive: { backgroundColor: "#5f00be" },
-  deptOptionText: { flex: 1, fontSize: 15, fontWeight: "600", color: "#1A2E44" },
+  deptOptionText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#1A2E44",
+  },
   emptyDept: { alignItems: "center", paddingVertical: 30, gap: 10 },
   emptyDeptText: { color: "#94A3B8", fontSize: 14, textAlign: "center" },
 
   newDeptForm: { paddingVertical: 10, gap: 14 },
-  newDeptInput: { height: 52, borderWidth: 1, borderColor: "#D8E2F0", borderRadius: 14, paddingHorizontal: 16, fontSize: 15, color: "#081B43", backgroundColor: "#F9FBFF" },
-  createDeptBtn: { height: 52, backgroundColor: "#5f00be", borderRadius: 14, justifyContent: "center", alignItems: "center" },
+  newDeptInput: {
+    height: 52,
+    borderWidth: 1,
+    borderColor: "#D8E2F0",
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    fontSize: 15,
+    color: "#081B43",
+    backgroundColor: "#F9FBFF",
+  },
+  createDeptBtn: {
+    height: 52,
+    backgroundColor: "#5f00be",
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   createDeptBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
 });

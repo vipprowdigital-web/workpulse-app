@@ -6,9 +6,9 @@ export const sendEmail = async (to, subject, html) => {
 
     await resend.emails.send({
       from: "onboarding@resend.dev",
-      to,
+      to:"vipintiwari.dm@gmail.com",
       subject,
-      html,
+      html: html,
     });
 
   } catch (error) {

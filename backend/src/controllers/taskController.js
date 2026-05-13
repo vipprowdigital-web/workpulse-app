@@ -131,12 +131,10 @@ export const toggleTaskStatus = async (req, res) => {
   try {
     const { id } = req.params;
     // YE FIX — req.body undefined ho to crash na ho
+    console.log("User: ", req.body);
+    
     const userDescription = req.body?.userDescription || "";
-
-    const task = await Task.findOne({
-      _id: id,
-      companyId: req.user.companyId,
-    });
+   const task = await Task.findById(id);
 
     if (!task) {
       return res.status(404).json({ message: "Task not found" });

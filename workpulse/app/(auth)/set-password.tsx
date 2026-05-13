@@ -6,6 +6,7 @@ import {
 } from "react-native";
 import { Stack } from "expo-router";
 import Input from "@/components/input";
+import Button from "@/components/button";
 
 export default function ResetPassword() {
   return (
@@ -42,9 +43,7 @@ export default function ResetPassword() {
         />
 
         {/* BUTTON */}
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Update Password</Text>
-        </TouchableOpacity>
+      <Button title="Update Password" />
 
       </View>
     </>
@@ -53,7 +52,7 @@ export default function ResetPassword() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#081B43",
+      backgroundColor: "#e8ecf5",
     padding: 20,
     justifyContent: "center",
   },
@@ -61,7 +60,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: "bold",
-    color: "#FFFFFF",
+    color: "#1a1818",
     textAlign: "center",
     marginBottom: 30,
   },

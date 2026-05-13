@@ -6,16 +6,19 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  StatusBar,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
 import * as SecureStore from "expo-secure-store";
 import Button from "@/components/button";
+import { router } from "expo-router";
 
 type UserType = {
   _id: string;
   name: string;
-  createdAt?: string;
+  department?: string;
 };
 
 type ProjectType = {
@@ -35,15 +38,14 @@ export default function AssignedTasks() {
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
 
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showProjectDropdown, setShowProjectDropdown] = useState(false);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         const token = await SecureStore.getItemAsync("token");
-
-        if (!token) {
-          Alert.alert("Error", "Login session missing");
-          return;
-        }
+        if (!token) { Alert.alert("Error", "Login session missing"); return; }
 
         const userRes = await fetch(
           `${process.env.EXPO_PUBLIC_API_URL}/api/user`,
@@ -62,7 +64,6 @@ export default function AssignedTasks() {
         console.log(err);
       }
     };
-
     fetchData();
   }, []);
 
@@ -71,9 +72,8 @@ export default function AssignedTasks() {
       Alert.alert("Error", "Select user & project");
       return;
     }
-
     if (!taskTitle.trim()) {
-      Alert.alert("Error", "Enter task");
+      Alert.alert("Error", "Enter task title");
       return;
     }
 
@@ -99,178 +99,682 @@ export default function AssignedTasks() {
         }),
       });
 
-      if (!res.ok) {
-        throw new Error("Task create failed");
-      }
+      if (!res.ok) throw new Error("Task create failed");
 
-      Alert.alert("Success", "Task Created ✅");
-
-      setUserSearch("");
-      setProjectSearch("");
-      setTaskTitle("");
-      setDueDate("");
-      setSelectedUser(null);
-      setSelectedProject(null);
+      Alert.alert("Success ✅", "Task successfully assigned!", [
+        { text: "OK", onPress: () => {
+          setUserSearch(""); setProjectSearch("");
+          setTaskTitle(""); setDueDate("");
+          setSelectedUser(null); setSelectedProject(null);
+        }}
+      ]);
     } catch (err) {
       console.log(err);
       Alert.alert("Error", "Something went wrong");
     }
   };
 
-  const renderDropdown = (
-    data: { _id: string; name: string }[],
-    setSelected: (id: string) => void,
-    setSearch: (name: string) => void
-  ) => (
-    <ScrollView
-      style={styles.dropdown}
-      nestedScrollEnabled
-      keyboardShouldPersistTaps="handled"
-    >
-      {data.map((item) => (
-        <TouchableOpacity
-          key={item._id}
-          style={styles.item}
-          onPress={() => {
-            setSelected(item._id);
-            setSearch(item.name);
-          }}
-        >
-          <Text style={styles.text}>{item.name}</Text>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
+  const filteredUsers = users.filter((u) =>
+    u.name.toLowerCase().includes(userSearch.toLowerCase())
   );
 
+  const filteredProjects = projects.filter((p) =>
+    p.name.toLowerCase().includes(projectSearch.toLowerCase())
+  );
+
+  const selectedUserName = users.find((u) => u._id === selectedUser)?.name;
+  const selectedProjectName = projects.find((p) => p._id === selectedProject)?.name;
+
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={{ paddingBottom: 30 }}
-      nestedScrollEnabled
-    >
+    <View style={styles.root}>
+      <StatusBar barStyle="light-content" backgroundColor="#5f00be" />
+
+      {/* Header */}
       <LinearGradient colors={["#5f00be", "#127a6e"]} style={styles.header}>
-        <Text style={styles.headerText}>Assign Task</Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={22} color="#fff" />
+        </TouchableOpacity>
+        <View>
+          <Text style={styles.headerTitle}>Assign Task</Text>
+          <Text style={styles.headerSub}>Assign work to team members</Text>
+        </View>
       </LinearGradient>
 
-      <View style={styles.card}>
-        <Text style={styles.label}>Select User</Text>
-        <TextInput
-          placeholder="Search user..."
-          placeholderTextColor="#9CA3AF"
-          style={styles.input}
-          value={userSearch}
-          onChangeText={setUserSearch}
-        />
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Select User */}
+        <View style={styles.card}>
+          <Text style={styles.label}>
+            <Ionicons name="person-outline" size={14} color="#CBD5F5" /> Select User
+          </Text>
 
-        {renderDropdown(
-          users.filter((u) =>
-            u.name.toLowerCase().includes(userSearch.toLowerCase())
-          ),
-          setSelectedUser,
-          setUserSearch
+          {selectedUser && (
+            <View style={styles.selectedBadge}>
+              <Ionicons name="checkmark-circle" size={16} color="#00A693" />
+              <Text style={styles.selectedBadgeText}>{selectedUserName}</Text>
+              <TouchableOpacity onPress={() => { setSelectedUser(null); setUserSearch(""); }}>
+                <Ionicons name="close-circle" size={16} color="#9CA3AF" />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          <TextInput
+            placeholder="Search user..."
+            placeholderTextColor="#9CA3AF"
+            style={styles.input}
+            value={userSearch}
+            onChangeText={(t) => { setUserSearch(t); setShowUserDropdown(true); }}
+            onFocus={() => setShowUserDropdown(true)}
+          />
+
+          {showUserDropdown && filteredUsers.length > 0 && (
+            <View style={styles.dropdown}>
+              {filteredUsers.map((item) => (
+                <TouchableOpacity
+                  key={item._id}
+                  style={[styles.dropdownItem, selectedUser === item._id && styles.dropdownItemSelected]}
+                  onPress={() => {
+                    setSelectedUser(item._id);
+                    setUserSearch(item.name);
+                    setShowUserDropdown(false);
+                  }}
+                >
+                  <View style={styles.dropdownItemLeft}>
+                    <View style={styles.dropdownAvatar}>
+                      <Text style={styles.dropdownAvatarText}>{item.name.charAt(0).toUpperCase()}</Text>
+                    </View>
+                    <View>
+                      <Text style={styles.dropdownItemText}>{item.name}</Text>
+                      {item.department && <Text style={styles.dropdownItemSub}>{item.department}</Text>}
+                    </View>
+                  </View>
+                  {selectedUser === item._id && <Ionicons name="checkmark" size={16} color="#00A693" />}
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+
+        {/* Select Project */}
+        <View style={styles.card}>
+          <Text style={styles.label}>
+            <Ionicons name="folder-outline" size={14} color="#CBD5F5" /> Select Project
+          </Text>
+
+          {selectedProject && (
+            <View style={styles.selectedBadge}>
+              <Ionicons name="checkmark-circle" size={16} color="#00A693" />
+              <Text style={styles.selectedBadgeText}>{selectedProjectName}</Text>
+              <TouchableOpacity onPress={() => { setSelectedProject(null); setProjectSearch(""); }}>
+                <Ionicons name="close-circle" size={16} color="#9CA3AF" />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          <TextInput
+            placeholder="Search project..."
+            placeholderTextColor="#9CA3AF"
+            style={styles.input}
+            value={projectSearch}
+            onChangeText={(t) => { setProjectSearch(t); setShowProjectDropdown(true); }}
+            onFocus={() => setShowProjectDropdown(true)}
+          />
+
+          {showProjectDropdown && filteredProjects.length > 0 && (
+            <View style={styles.dropdown}>
+              {filteredProjects.map((item) => (
+                <TouchableOpacity
+                  key={item._id}
+                  style={[styles.dropdownItem, selectedProject === item._id && styles.dropdownItemSelected]}
+                  onPress={() => {
+                    setSelectedProject(item._id);
+                    setProjectSearch(item.name);
+                    setShowProjectDropdown(false);
+                  }}
+                >
+                  <View style={styles.dropdownItemLeft}>
+                    <Ionicons name="folder" size={18} color="#9B42F2" style={{ marginRight: 8 }} />
+                    <Text style={styles.dropdownItemText}>{item.name}</Text>
+                  </View>
+                  {selectedProject === item._id && <Ionicons name="checkmark" size={16} color="#00A693" />}
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+
+        {/* Task Title */}
+        <View style={styles.card}>
+          <Text style={styles.label}>
+            <Ionicons name="create-outline" size={14} color="#CBD5F5" /> Task Title *
+          </Text>
+          <TextInput
+            placeholder="Enter task title..."
+            placeholderTextColor="#9CA3AF"
+            style={styles.input}
+            value={taskTitle}
+            onChangeText={setTaskTitle}
+            multiline
+          />
+        </View>
+
+        {/* Due Date */}
+        <View style={styles.card}>
+          <Text style={styles.label}>
+            <Ionicons name="calendar-outline" size={14} color="#CBD5F5" /> Due Date (optional)
+          </Text>
+          <TextInput
+            placeholder="YYYY-MM-DD"
+            placeholderTextColor="#9CA3AF"
+            style={styles.input}
+            value={dueDate}
+            onChangeText={setDueDate}
+          />
+        </View>
+
+        {/* Summary */}
+        {(selectedUser || selectedProject || taskTitle) && (
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryTitle}>Task Summary</Text>
+            {selectedUserName && (
+              <View style={styles.summaryRow}>
+                <Ionicons name="person" size={14} color="#9CA3AF" />
+                <Text style={styles.summaryText}>{selectedUserName}</Text>
+              </View>
+            )}
+            {selectedProjectName && (
+              <View style={styles.summaryRow}>
+                <Ionicons name="folder" size={14} color="#9CA3AF" />
+                <Text style={styles.summaryText}>{selectedProjectName}</Text>
+              </View>
+            )}
+            {taskTitle ? (
+              <View style={styles.summaryRow}>
+                <Ionicons name="document-text" size={14} color="#9CA3AF" />
+                <Text style={styles.summaryText}>{taskTitle}</Text>
+              </View>
+            ) : null}
+            {dueDate ? (
+              <View style={styles.summaryRow}>
+                <Ionicons name="calendar" size={14} color="#9CA3AF" />
+                <Text style={styles.summaryText}>{dueDate}</Text>
+              </View>
+            ) : null}
+          </View>
         )}
-      </View>
 
-      <View style={styles.card}>
-        <Text style={styles.label}>Select Project</Text>
-        <TextInput
-          placeholder="Search project..."
-          placeholderTextColor="#9CA3AF"
-          style={styles.input}
-          value={projectSearch}
-          onChangeText={setProjectSearch}
-        />
+        {/* Create Button */}
+        <TouchableOpacity
+          style={[styles.createBtn, (!selectedUser || !selectedProject || !taskTitle.trim()) && styles.createBtnDisabled]}
+          onPress={handleCreateTask}
+          activeOpacity={0.85}
+        >
+          <LinearGradient
+            colors={(!selectedUser || !selectedProject || !taskTitle.trim()) ? ["#374151", "#374151"] : ["#5f00be", "#00A693"]}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={styles.createBtnGrad}
+          >
+            <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
+            <Text style={styles.createBtnText}>Create Task</Text>
+          </LinearGradient>
+        </TouchableOpacity>
 
-        {renderDropdown(
-          projects.filter((p) =>
-            p.name.toLowerCase().includes(projectSearch.toLowerCase())
-          ),
-          setSelectedProject,
-          setProjectSearch
-        )}
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.label}>Task</Text>
-        <TextInput
-          placeholder="Enter task..."
-          placeholderTextColor="#9CA3AF"
-          style={styles.input}
-          value={taskTitle}
-          onChangeText={setTaskTitle}
-        />
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.label}>Due Date</Text>
-        <TextInput
-          placeholder="YYYY-MM-DD"
-          placeholderTextColor="#9CA3AF"
-          style={styles.input}
-          value={dueDate}
-          onChangeText={setDueDate}
-        />
-      </View>
-
-      <View style={{ marginTop: 20, marginHorizontal: 20, marginBottom: 30 }}>
-        <Button title="Create Task" onPress={handleCreateTask} />
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    backgroundColor: "#d3d7df",
+    backgroundColor: "#EEF3FB",
   },
-
   header: {
-    padding: 30,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    paddingTop: 55,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
   },
-
-  headerText: {
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTitle: {
     color: "#fff",
     fontSize: 20,
-    fontWeight: "bold",
+    fontWeight: "800",
   },
-
+  headerSub: {
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 12,
+    marginTop: 2,
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 40,
+  },
   card: {
     backgroundColor: "#0F2A5F",
-    margin: 15,
-    padding: 15,
-    borderRadius: 15,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 14,
   },
-
   label: {
     color: "#CBD5F5",
-    marginBottom: 5,
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 10,
   },
-
   input: {
     backgroundColor: "#081B43",
-    padding: 10,
+    padding: 12,
+    borderRadius: 10,
+    color: "#fff",
+    fontSize: 14,
+  },
+  selectedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(0,166,147,0.15)",
     borderRadius: 8,
-    color: "#fff",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginBottom: 8,
+    alignSelf: "flex-start",
   },
-
+  selectedBadgeText: {
+    color: "#00A693",
+    fontSize: 13,
+    fontWeight: "600",
+    flex: 1,
+  },
   dropdown: {
-    maxHeight: 180,
-    marginTop: 5,
+    marginTop: 6,
+    backgroundColor: "#081B43",
+    borderRadius: 10,
+    overflow: "hidden",
+    maxHeight: 200,
   },
-
-  item: {
-    padding: 10,
+  dropdownItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 12,
     borderBottomWidth: 0.5,
-    borderColor: "#1E3A8A",
+    borderBottomColor: "#1E3A8A",
   },
-
-  text: {
+  dropdownItemSelected: {
+    backgroundColor: "rgba(0,166,147,0.1)",
+  },
+  dropdownItemLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  dropdownAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: "#1D6FA4",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+  },
+  dropdownAvatarText: {
     color: "#fff",
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  dropdownItemText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  dropdownItemSub: {
+    color: "#9CA3AF",
+    fontSize: 11,
+    marginTop: 1,
+  },
+  summaryCard: {
+    backgroundColor: "#0F2A5F",
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 14,
+    borderLeftWidth: 3,
+    borderLeftColor: "#00A693",
+  },
+  summaryTitle: {
+    color: "#CBD5F5",
+    fontSize: 13,
+    fontWeight: "700",
+    marginBottom: 10,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 6,
+  },
+  summaryText: {
+    color: "#E0E7FF",
+    fontSize: 13,
+    flex: 1,
+  },
+  createBtn: {
+    borderRadius: 14,
+    overflow: "hidden",
+    marginTop: 4,
+  },
+  createBtnDisabled: {
+    opacity: 0.6,
+  },
+  createBtnGrad: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 16,
+  },
+  createBtnText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "800",
+    letterSpacing: 0.3,
   },
 });
+
+
+// import {
+//   View,
+//   Text,
+//   StyleSheet,
+//   TextInput,
+//   TouchableOpacity,
+//   ScrollView,
+//   Alert,
+// } from "react-native";
+// import { LinearGradient } from "expo-linear-gradient";
+// import { useState, useEffect } from "react";
+// import * as SecureStore from "expo-secure-store";
+// import Button from "@/components/button";
+
+// type UserType = {
+//   _id: string;
+//   name: string;
+//   createdAt?: string;
+// };
+
+// type ProjectType = {
+//   _id: string;
+//   name: string;
+// };
+
+// export default function AssignedTasks() {
+//   const [userSearch, setUserSearch] = useState("");
+//   const [projectSearch, setProjectSearch] = useState("");
+//   const [taskTitle, setTaskTitle] = useState("");
+//   const [dueDate, setDueDate] = useState("");
+
+//   const [users, setUsers] = useState<UserType[]>([]);
+//   const [projects, setProjects] = useState<ProjectType[]>([]);
+
+//   const [selectedUser, setSelectedUser] = useState<string | null>(null);
+//   const [selectedProject, setSelectedProject] = useState<string | null>(null);
+
+//   useEffect(() => {
+//     const fetchData = async () => {
+//       try {
+//         const token = await SecureStore.getItemAsync("token");
+
+//         if (!token) {
+//           Alert.alert("Error", "Login session missing");
+//           return;
+//         }
+
+//         const userRes = await fetch(
+//           `${process.env.EXPO_PUBLIC_API_URL}/api/user`,
+//           { headers: { Authorization: `Bearer ${token}` } }
+//         );
+//         const userData = await userRes.json();
+//         setUsers(Array.isArray(userData) ? userData : []);
+
+//         const projectRes = await fetch(
+//           `${process.env.EXPO_PUBLIC_API_URL}/api/project`,
+//           { headers: { Authorization: `Bearer ${token}` } }
+//         );
+//         const projectData = await projectRes.json();
+//         setProjects(Array.isArray(projectData) ? projectData : []);
+//       } catch (err) {
+//         console.log(err);
+//       }
+//     };
+
+//     fetchData();
+//   }, []);
+
+//   const handleCreateTask = async () => {
+//     if (!selectedUser || !selectedProject) {
+//       Alert.alert("Error", "Select user & project");
+//       return;
+//     }
+
+//     if (!taskTitle.trim()) {
+//       Alert.alert("Error", "Enter task");
+//       return;
+//     }
+
+//     try {
+//       const token = await SecureStore.getItemAsync("token");
+//       const adminId = await SecureStore.getItemAsync("adminId");
+
+//       const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/task`, {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${token}`,
+//         },
+//         body: JSON.stringify({
+//           assignedTo: selectedUser,
+//           project: selectedProject,
+//           team: null,
+//           title: taskTitle,
+//           dueDate: dueDate ? new Date(dueDate).toISOString() : null,
+//           createdBy: adminId,
+//           taskType: "team",
+//           status: "Pending",
+//         }),
+//       });
+
+//       if (!res.ok) {
+//         throw new Error("Task create failed");
+//       }
+
+//       Alert.alert("Success", "Task Created ✅");
+
+//       setUserSearch("");
+//       setProjectSearch("");
+//       setTaskTitle("");
+//       setDueDate("");
+//       setSelectedUser(null);
+//       setSelectedProject(null);
+//     } catch (err) {
+//       console.log(err);
+//       Alert.alert("Error", "Something went wrong");
+//     }
+//   };
+
+//   const renderDropdown = (
+//     data: { _id: string; name: string }[],
+//     setSelected: (id: string) => void,
+//     setSearch: (name: string) => void
+//   ) => (
+//     <ScrollView
+//       style={styles.dropdown}
+//       nestedScrollEnabled
+//       keyboardShouldPersistTaps="handled"
+      
+//     >
+//       {data.map((item) => (
+//         <TouchableOpacity
+//           key={item._id}
+//           style={styles.item}
+//           onPress={() => {
+//             setSelected(item._id);
+//             setSearch(item.name);
+//           }}
+//         >
+//           <Text style={styles.text}>{item.name}</Text>
+//         </TouchableOpacity>
+//       ))}
+//     </ScrollView>
+//   );
+
+//   return (
+//     <ScrollView
+//       style={styles.container}
+//       contentContainerStyle={{ paddingBottom: 90,  }}
+//       nestedScrollEnabled
+//     >
+//       <LinearGradient colors={["#5f00be", "#127a6e"]} style={styles.header}>
+//         <Text style={styles.headerText}>Assign Task</Text>
+//       </LinearGradient>
+
+//       <View style={styles.card}>
+//         <Text style={styles.label}>Select User</Text>
+//         <TextInput
+//           placeholder="Search user..."
+//           placeholderTextColor="#9CA3AF"
+//           style={styles.input}
+//           value={userSearch}
+//           onChangeText={setUserSearch}
+//         />
+
+//         {renderDropdown(
+//           users.filter((u) =>
+//             u.name.toLowerCase().includes(userSearch.toLowerCase())
+//           ),
+//           setSelectedUser,
+//           setUserSearch
+//         )}
+//       </View>
+
+//       <View style={styles.card}>
+//         <Text style={styles.label}>Select Project</Text>
+//         <TextInput
+//           placeholder="Search project..."
+//           placeholderTextColor="#9CA3AF"
+//           style={styles.input}
+//           value={projectSearch}
+//           onChangeText={setProjectSearch}
+//         />
+
+//         {renderDropdown(
+//           projects.filter((p) =>
+//             p.name.toLowerCase().includes(projectSearch.toLowerCase())
+//           ),
+//           setSelectedProject,
+//           setProjectSearch
+//         )}
+//       </View>
+
+//       <View style={styles.card}>
+//         <Text style={styles.label}>Task</Text>
+//         <TextInput
+//           placeholder="Enter task..."
+//           placeholderTextColor="#9CA3AF"
+//           style={styles.input}
+//           value={taskTitle}
+//           onChangeText={setTaskTitle}
+//         />
+//       </View>
+
+//       <View style={styles.card}>
+//         <Text style={styles.label}>Due Date</Text>
+//         <TextInput
+//           placeholder="YYYY-MM-DD"
+//           placeholderTextColor="#9CA3AF"
+//           style={styles.input}
+//           value={dueDate}
+//           onChangeText={setDueDate}
+//         />
+//       </View>
+
+//       <View style={{ marginTop: 20, marginHorizontal: 20, marginBottom: 30 }}>
+//         <Button title="Create Task" onPress={handleCreateTask} />
+//       </View>
+//     </ScrollView>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     backgroundColor: "#d3d7df",
+//     marginBottom:50,
+//   },
+
+//   header: {
+//     padding: 30,
+//     borderBottomLeftRadius: 20,
+//     borderBottomRightRadius: 20,
+//   },
+
+//   headerText: {
+//     color: "#fff",
+//     fontSize: 20,
+//     fontWeight: "bold",
+//   },
+
+//   card: {
+//     backgroundColor: "#0F2A5F",
+//     margin: 15,
+//     padding: 15,
+//     borderRadius: 15,
+//   },
+
+//   label: {
+//     color: "#CBD5F5",
+//     marginBottom: 5,
+//   },
+
+//   input: {
+//     backgroundColor: "#081B43",
+//     padding: 10,
+//     borderRadius: 8,
+//     color: "#fff",
+//   },
+
+//   dropdown: {
+//     maxHeight: 180,
+//     marginTop: 5,
+//   },
+
+//   item: {
+//     padding: 10,
+//     borderBottomWidth: 0.5,
+//     borderColor: "#1E3A8A",
+//   },
+
+//   text: {
+//     color: "#fff",
+//   },
+// });
 
 // import {
 //   View,

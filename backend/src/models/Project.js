@@ -21,6 +21,13 @@ const projectSchema = new mongoose.Schema(
   ref: "Admin",
   required: true,
 },
+
+ companyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Admin",
+      index: true,
+      default: null,
+    },
   },
   
   { timestamps: true }

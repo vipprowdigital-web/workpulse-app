@@ -128,6 +128,7 @@ export const getMyProfile = async (req, res) => {
     res.status(500).json({ message: "Error fetching profile" });
   }
 };
+console.log ("error");
 
 
 // import User from "../models/User.js";

@@ -392,8 +392,16 @@ function UserTaskScreen() {
     finally { setLoading(false); }
   };
 
-  const filteredTasks = useMemo(() => tasks.filter((t) => t.status === activeTab), [tasks, activeTab]);
-  const pendingCount = useMemo(() => tasks.filter((t) => t.status === "Pending").length, [tasks]);
+ const filteredTasks = useMemo(() => {
+  if (activeTab === "Pending") {
+    return tasks.filter((t) => t.status === "Pending" || t.status === "Reassigned");
+  }
+  return tasks.filter((t) => t.status === "Completed" || t.status === "Approved");
+}, [tasks, activeTab]);
+ const pendingCount = useMemo(
+  () => tasks.filter((t) => t.status === "Pending" || t.status === "Reassigned").length,
+  [tasks]
+);
   const completedCount = useMemo(() => tasks.filter((t) => t.status === "Completed").length, [tasks]);
 
   const formatTaskDate = (dateString?: string) => {

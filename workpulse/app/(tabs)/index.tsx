@@ -23,7 +23,7 @@ import { router } from "expo-router";
 type TaskType = {
   _id: string;
   title: string;
-  status: "Pending" | "Completed";
+  status: "Pending" | "Completed" |"Reassigned";
   dueDate?: string | null;
   createdAt?: string;
   project?: { _id: string; name: string } | null;
@@ -308,7 +308,10 @@ function UserDashboard() {
     setRefreshing(false);
   };
 
-  const pendingTasks = useMemo(() => tasks.filter((t) => t.status === "Pending"), [tasks]);
+ const pendingTasks = useMemo(
+  () => tasks.filter((task) => task.status === "Pending" || task.status === "Reassigned"),
+  [tasks]
+);
   const completedTasks = useMemo(() => tasks.filter((t) => t.status === "Completed"), [tasks]);
 
   const todayAssignedTasks = useMemo(() => {
@@ -344,13 +347,15 @@ function UserDashboard() {
 
   const handleToggleTask = async (taskId: string, description: string) => {
     try {
+      console.log("description: ", description);
+      
       const token = await SecureStore.getItemAsync("token");
       const res = await fetch(
         `${process.env.EXPO_PUBLIC_API_URL}/api/task/toggle/${taskId}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ userDescription: description }),
+          body: JSON.stringify({ userDescription: description, }),
         }
       );
       const data = await res.json();

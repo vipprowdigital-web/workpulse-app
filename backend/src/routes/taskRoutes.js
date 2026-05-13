@@ -22,7 +22,7 @@ router.post("/", protect, createTask);
 router.get("/", protect, getTasks);
 router.get("/my/:userId", protect, getMyTasks);
 router.get("/team/:userId", protect, getTeamTasks);
-router.put("/toggle/:id", toggleTaskStatus); // User side — no admin check
+router.put("/toggle/:id", protect, toggleTaskStatus); // User side — no admin check
 router.get("/user/:userId", getUserTasks);   // User apne tasks dekhta hai
 router.post("/self", protect, adminOnly, createSelfTask);
 router.get("/my/:adminId", protect, adminOnly, getMyTasks);
