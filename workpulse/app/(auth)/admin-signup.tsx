@@ -3,7 +3,9 @@ import { useRouter, Stack } from "expo-router";
 import { Alert } from "react-native";
 import { useState } from "react";
 import Button from "@/components/button";
+import { KeyboardAvoidingView, Platform, StatusBar, SafeAreaView } from "react-native";
 import Input from "@/components/input";
+import { apiUrl } from "../../config/env";
 
 export default function AdminSignup() {
   const router = useRouter();
@@ -25,7 +27,7 @@ export default function AdminSignup() {
     try {
       setLoading(true);
 
-      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/auth/signup`, {
+      const res = await fetch(`${apiUrl}/api/auth/signup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -56,80 +58,118 @@ export default function AdminSignup() {
   };
 
   return (
-    <>
+    <SafeAreaView style={styles.safeArea}>
       <Stack.Screen options={{ headerShown: false }} />
+      
+      <StatusBar 
+        barStyle="dark-content" 
+        backgroundColor="#EEF2F7" 
+        translucent={false} 
+      />
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
+      {/* 🚨 STICKY HEADER: Title ko ScrollView se bahar nikal diya taaki ye apni jagah fix rahe */}
+      <View style={styles.headerContainer}>
+        <Text style={styles.title}>Create Company Account</Text>
+      </View>
+
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === "ios" ? "padding" : "padding"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : -50}
       >
-        <View style={styles.container}>
-          <Text style={styles.title}>Create Company Account</Text>
+        {/* Ab sirf inputs scroll honge, title apni jagah fixed rahega */}
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
+          <View style={styles.formContainer}>
+            <Input label="Company Name" icon="business-outline" placeholder="Enter company name" value={companyName} onChangeText={setCompanyName} />
 
-          <Input label="Company Name" icon="business-outline" placeholder="Enter company name" value={companyName} onChangeText={setCompanyName} />
+            <Input label="Email" icon="mail-outline" placeholder="Enter email" value={email} onChangeText={setEmail} />
 
-          <Input label="Email" icon="mail-outline" placeholder="Enter email" value={email} onChangeText={setEmail} />
+            <Input label="Phone Number" icon="call-outline" placeholder="Enter phone number" value={phone} onChangeText={setPhone} />
 
-          <Input label="Phone Number" icon="call-outline" placeholder="Enter phone number" value={phone} onChangeText={setPhone} />
+            <Input label="Business Type" icon="briefcase-outline" placeholder="e.g IT, Marketing" value={businessType} onChangeText={setBusinessType} />
 
-          <Input label="Business Type" icon="briefcase-outline" placeholder="e.g IT, Marketing" value={businessType} onChangeText={setBusinessType} />
+            <Input label="Address" icon="location-outline" placeholder="Enter address" value={address} onChangeText={setAddress} />
 
-          <Input label="Address" icon="location-outline" placeholder="Enter address" value={address} onChangeText={setAddress} />
+            <Input label="Password" icon="lock-closed-outline" placeholder="Enter password" secure={true} value={password} onChangeText={setPassword} />
 
-          <Input label="Password" icon="lock-closed-outline" placeholder="Enter password" secure={true} value={password} onChangeText={setPassword} />
-
-          <View style={{ height: 12 }} />
-
-          <Button title="Create Account" onPress={handleSignup} loading={loading} />
-        </View>
-      </ScrollView>
-    </>
+            <View style={styles.buttonWrapper}>
+              <Button title="Create Account" onPress={handleSignup} loading={loading} />
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContainer: {
-    paddingBottom: 30,
-  },
-
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: "#EEF2F7",
-    paddingHorizontal: 16,
-    paddingTop: 70,
   },
-
+  // 🚨 NEW STYLE: Title ko fixed top background dene ke liye
+  headerContainer: {
+    backgroundColor: "#EEF2F7",
+    paddingTop: Platform.OS === "android" ? 80 : 10,
+    paddingBottom: 10,
+    paddingHorizontal: 16,
+    zIndex: 10,
+  },
   title: {
     fontSize: 24,
     fontWeight: "bold",
     textAlign: "center",
-    marginBottom: 15,
     color: "#1E3A8A",
+  },
+  keyboardView: {
+    flex: 1,
+    backgroundColor: "#EEF2F7",
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    paddingTop: 10, // Title ke thoda niche se inputs start honge
+    paddingBottom: 40,
+  },
+  formContainer: {
+    flex: 1,
+    backgroundColor: "#EEF2F7",
+    paddingHorizontal: 16,
+  },
+  buttonWrapper: {
+    marginTop: 30,
+    marginBottom: 20,
+    paddingHorizontal: 4,
   },
 });
 
-
 // import { View, Text, StyleSheet, ScrollView } from "react-native";
-// import { Ionicons } from "@expo/vector-icons";
 // import { useRouter, Stack } from "expo-router";
 // import { Alert } from "react-native";
 // import { useState } from "react";
 // import Button from "@/components/button";
 // import Input from "@/components/input";
+// import {apiUrl} from "../../config/env";
 
 // export default function AdminSignup() {
 //   const router = useRouter();
 //   const [loading, setLoading] = useState(false);
 
-//   // 🔥 FORM STATE
 //   const [companyName, setCompanyName] = useState("");
 //   const [email, setEmail] = useState("");
 //   const [phone, setPhone] = useState("");
 //   const [businessType, setBusinessType] = useState("");
 //   const [address, setAddress] = useState("");
-//   const [password, setPassword] = useState(""); // 👈 NEW
+//   const [password, setPassword] = useState("");
 
-//   // 🔥 API CALL
 //   const handleSignup = async () => {
 //     if (!companyName || !email || !phone || !businessType || !address || !password) {
 //       Alert.alert("Error", "All fields are required");
@@ -139,7 +179,8 @@ const styles = StyleSheet.create({
 //     try {
 //       setLoading(true);
 
-//       const res = await fetch("http://192.168.29.192:5000/api/auth/signup", {
+//       // const res = await fetch(`${apiUrl}/api/auth/signup`, {
+//       const res = await fetch(`${apiUrl}/api/auth/signup`, {
 //         method: "POST",
 //         headers: {
 //           "Content-Type": "application/json",
@@ -148,10 +189,9 @@ const styles = StyleSheet.create({
 //           companyName,
 //           email,
 //           phone,
-          
 //           businessType,
 //           address,
-//           password, // 👈 IMPORTANT
+//           password,
 //         }),
 //       });
 
@@ -159,11 +199,10 @@ const styles = StyleSheet.create({
 
 //       if (res.ok) {
 //         Alert.alert("Success", "Account created successfully!");
-//         router.replace("/"); // login page
+//         router.replace("/");
 //       } else {
 //         Alert.alert("Error", data.message || "Signup failed");
 //       }
-
 //     } catch (error) {
 //       Alert.alert("Error", "Network error");
 //     } finally {
@@ -182,63 +221,21 @@ const styles = StyleSheet.create({
 //         <View style={styles.container}>
 //           <Text style={styles.title}>Create Company Account</Text>
 
-//           <Input
-//             label="Company Name"
-//             icon="business-outline"
-//             placeholder="Enter company name"
-//             value={companyName}
-//             onChangeText={setCompanyName}
-//           />
+//           <Input label="Company Name" icon="business-outline" placeholder="Enter company name" value={companyName} onChangeText={setCompanyName} />
 
-//           <Input
-//             label="Email"
-//             icon="mail-outline"
-//             placeholder="Enter email"
-//             value={email}
-//             onChangeText={setEmail}
-//           />
+//           <Input label="Email" icon="mail-outline" placeholder="Enter email" value={email} onChangeText={setEmail} />
 
-//           <Input
-//             label="Phone Number"
-//             icon="call-outline"
-//             placeholder="Enter phone number"
-//             value={phone}
-//             onChangeText={setPhone}
-//           />
+//           <Input label="Phone Number" icon="call-outline" placeholder="Enter phone number" value={phone} onChangeText={setPhone} />
 
-//           <Input
-//             label="Business Type"
-//             icon="briefcase-outline"
-//             placeholder="e.g IT, Marketing"
-//             value={businessType}
-//             onChangeText={setBusinessType}
-//           />
+//           <Input label="Business Type" icon="briefcase-outline" placeholder="e.g IT, Marketing" value={businessType} onChangeText={setBusinessType} />
 
-//           <Input
-//             label="Address"
-//             icon="location-outline"
-//             placeholder="Enter address"
-//             value={address}
-//             onChangeText={setAddress}
-//           />
+//           <Input label="Address" icon="location-outline" placeholder="Enter address" value={address} onChangeText={setAddress} />
 
-//           {/* 🔥 NEW PASSWORD FIELD */}
-//           <Input
-//             label="Password"
-//             icon="lock-closed-outline"
-//             placeholder="Enter password"
-//             secure={true}
-//             value={password}
-//             onChangeText={setPassword}
-//           />
+//           <Input label="Password" icon="lock-closed-outline" placeholder="Enter password" secure={true} value={password} onChangeText={setPassword} />
 
 //           <View style={{ height: 12 }} />
 
-//           <Button
-//             title="Create Account"
-//             onPress={handleSignup}
-//             loading={loading}
-//           />
+//           <Button title="Create Account" onPress={handleSignup} loading={loading} />
 //         </View>
 //       </ScrollView>
 //     </>
@@ -254,7 +251,7 @@ const styles = StyleSheet.create({
 //     flex: 1,
 //     backgroundColor: "#EEF2F7",
 //     paddingHorizontal: 16,
-//     paddingTop: 30,
+//     paddingTop: 70,
 //   },
 
 //   title: {
@@ -266,72 +263,3 @@ const styles = StyleSheet.create({
 //   },
 // });
 
-// import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
-// import { Ionicons } from "@expo/vector-icons";
-// import { useRouter } from "expo-router";
-// import { Stack } from "expo-router";
-// import { Alert } from "react-native";
-// import { useState } from "react";
-// import Button from "@/components/button";
-// import Input from "@/components/input";
-
-// export default function AdminSignup() {
-//   const router = useRouter();
-//   const [loading, setLoading] = useState(false);
-
-//  const handleSignup = () => {
-//   setLoading(true);
-
-//   setTimeout(() => {
-//     Alert.alert("Success", "Account created successfully!");
-//     router.replace("/");
-//     setLoading(false);
-//   }, 1500);
-// };
-
-// return (
-//   <>
-//     <Stack.Screen options={{ headerShown: false }} />
-
-//     <View style={styles.container}>
-//       <Text style={styles.title}>Create Company Account</Text>
-
-//       <Input label="Company Name" icon="business-outline" placeholder="Enter company name" />
-//       <Input label="Email" icon="mail-outline" placeholder="Enter email" />
-//       <Input label="Phone Number" icon="call-outline" placeholder="Enter phone number" />
-//       <Input label="Business Type" icon="briefcase-outline" placeholder="e.g IT, Marketing" />
-//       <Input label="Address" icon="location-outline" placeholder="Enter address" />
-
-//     <Button 
-//   title="Create Account" 
-//   onPress={handleSignup} 
-//   loading={loading} 
-// />
-//     </View>
-//   </>
-// );
-  
-// }
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: "#EEF2F7",
-//     padding: 20,
-//     justifyContent: "center",
-//   },
-
-//   title: {
-//     fontSize: 26,
-//     fontWeight: "bold",
-//     textAlign: "center",
-//     marginBottom: 25,
-//     color: "#1E3A8A",
-//   },
-
-
-
-//   buttonText: {
-//     color: "#fff",
-//     fontWeight: "bold",
-//   },
-// });

@@ -15,6 +15,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState, useCallback } from "react";
 import * as SecureStore from "expo-secure-store";
 import { router, useFocusEffect } from "expo-router";
+import { apiUrl } from "@/config/env";
 
 type AdminProfile = {
   _id: string;
@@ -105,7 +106,7 @@ function AdminAccount() {
   const [creatingDept, setCreatingDept] = useState(false);
   const [addDeptVisible, setAddDeptVisible] = useState(false);
 
-  const API = process.env.EXPO_PUBLIC_API_URL;
+  const API = apiUrl;
 
   const fetchAll = useCallback(async () => {
     try {
@@ -775,7 +776,7 @@ function UserAccount() {
   const [refreshing, setRefreshing] = useState(false);
   const [activeModal, setActiveModal] = useState<UserModalType>(null);
 
-  const API = process.env.EXPO_PUBLIC_API_URL;
+  const API = apiUrl;
 
   const fetchUserAccount = useCallback(async () => {
     try {
@@ -1576,7 +1577,7 @@ const styles = StyleSheet.create({
 //   const [creatingDept, setCreatingDept] = useState(false);
 //   const [addDeptVisible, setAddDeptVisible] = useState(false);
 
-//   const API = process.env.EXPO_PUBLIC_API_URL;
+//   const API = apiUrl;
 
 //   const fetchAll = useCallback(async () => {
 //     try {

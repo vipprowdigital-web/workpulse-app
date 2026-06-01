@@ -1,5 +1,10 @@
 import express from "express";
-import { addProject, getProjects, getProjectStatus } from "../controllers/projectController.js";
+import {
+  addProject,
+  getProjects,
+  getProjectStatus,
+  getUserProjects,
+} from "../controllers/projectController.js";
 import { protect, adminOnly } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
@@ -7,9 +12,9 @@ const router = express.Router();
 router.post("/", protect, adminOnly, addProject);
 router.get("/", protect, adminOnly, getProjects);
 router.get("/status", protect, adminOnly, getProjectStatus);
+router.get("/user/:userId", protect, getUserProjects);
 
 export default router;
-
 
 // import express from "express";
 // import {
@@ -25,7 +30,6 @@ export default router;
 // router.get("/status", getProjectStatus);
 
 // export default router;
-
 
 // import express from "express";
 // import {

@@ -58,11 +58,43 @@ const taskSchema = new mongoose.Schema(
       default: "team",
     },
 
-    assignedTo: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      default: null,
-    },
+    assignedTo: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    
+    userProgress: [
+      {
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        status: {
+          type: String,
+          enum: ["Pending", "Completed", "Approved", "Reassigned"],
+          default: "Pending",
+        },
+        userDescription: {
+          type: String,
+          default: "",
+        },
+        adminNote: {
+          type: String,
+          default: "",
+        },
+        submittedAt: {
+          type: Date,
+          default: null,
+        },
+        approvedAt: {
+          type: Date,
+          default: null,
+        },
+      },
+    ],
 
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -70,11 +102,10 @@ const taskSchema = new mongoose.Schema(
       required: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model("Task", taskSchema);
-
 
 // import mongoose from "mongoose";
 
@@ -99,7 +130,6 @@ export default mongoose.model("Task", taskSchema);
 //   default: "Pending",
 // },
 
-
 // reviewStatus: {
 //   type: String,
 //   enum: ["Completed", "Approved", "Reassigned"],
@@ -115,7 +145,6 @@ export default mongoose.model("Task", taskSchema);
 //   type: String,
 //   default: "",
 // },
-
 
 //     project: {
 //       type: mongoose.Schema.Types.ObjectId,
@@ -163,7 +192,6 @@ export default mongoose.model("Task", taskSchema);
 // );
 
 // export default mongoose.model("Task", taskSchema);
-
 
 // import mongoose from "mongoose";
 

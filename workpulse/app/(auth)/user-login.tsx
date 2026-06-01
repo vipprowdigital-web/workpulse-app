@@ -11,6 +11,8 @@ import { useState } from "react";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { LinearGradient } from "expo-linear-gradient";
+import { apiUrl } from "@/config/env";
+
 
 export default function UserLogin() {
   const router = useRouter();
@@ -18,7 +20,7 @@ export default function UserLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const API_BASE = process.env.EXPO_PUBLIC_API_URL?.trim();
+  const API_BASE = apiUrl?.trim();
   const BASE_URL = `${API_BASE}/api/user`;
 
   const handleLogin = async () => {

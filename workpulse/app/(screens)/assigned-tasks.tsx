@@ -7,13 +7,16 @@ import {
   ScrollView,
   Alert,
   StatusBar,
+  Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
+import { KeyboardAvoidingView } from "react-native";
 import * as SecureStore from "expo-secure-store";
-import Button from "@/components/button";
 import { router } from "expo-router";
+import { apiUrl } from "@/config/env";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 type UserType = {
   _id: string;
@@ -30,12 +33,13 @@ export default function AssignedTasks() {
   const [userSearch, setUserSearch] = useState("");
   const [projectSearch, setProjectSearch] = useState("");
   const [taskTitle, setTaskTitle] = useState("");
-  const [dueDate, setDueDate] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   const [users, setUsers] = useState<UserType[]>([]);
   const [projects, setProjects] = useState<ProjectType[]>([]);
 
-  const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
 
   const [showUserDropdown, setShowUserDropdown] = useState(false);
@@ -45,19 +49,20 @@ export default function AssignedTasks() {
     const fetchData = async () => {
       try {
         const token = await SecureStore.getItemAsync("token");
-        if (!token) { Alert.alert("Error", "Login session missing"); return; }
+        if (!token) {
+          Alert.alert("Error", "Login session missing");
+          return;
+        }
 
-        const userRes = await fetch(
-          `${process.env.EXPO_PUBLIC_API_URL}/api/user`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const userRes = await fetch(`${apiUrl}/api/user`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const userData = await userRes.json();
         setUsers(Array.isArray(userData) ? userData : []);
 
-        const projectRes = await fetch(
-          `${process.env.EXPO_PUBLIC_API_URL}/api/project`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const projectRes = await fetch(`${apiUrl}/api/project`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const projectData = await projectRes.json();
         setProjects(Array.isArray(projectData) ? projectData : []);
       } catch (err) {
@@ -67,13 +72,21 @@ export default function AssignedTasks() {
     fetchData();
   }, []);
 
+  const toggleUserSelection = (userId: string) => {
+    setSelectedUsers((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId],
+    );
+  };
+
   const handleCreateTask = async () => {
-    if (!selectedUser || !selectedProject) {
-      Alert.alert("Error", "Select user & project");
+    if (selectedUsers.length === 0) {
+      Alert.alert("Error", "Kam se kam ek user select karo");
       return;
     }
     if (!taskTitle.trim()) {
-      Alert.alert("Error", "Enter task title");
+      Alert.alert("Error", "Task title enter karo");
       return;
     }
 
@@ -81,18 +94,18 @@ export default function AssignedTasks() {
       const token = await SecureStore.getItemAsync("token");
       const adminId = await SecureStore.getItemAsync("adminId");
 
-      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/task`, {
+      const res = await fetch(`${apiUrl}/api/task`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          assignedTo: selectedUser,
-          project: selectedProject,
+          assignedTo: selectedUsers,
+          project: selectedProject || null,
           team: null,
           title: taskTitle,
-          dueDate: dueDate ? new Date(dueDate).toISOString() : null,
+          dueDate: selectedDate ? selectedDate.toISOString() : null,
           createdBy: adminId,
           taskType: "team",
           status: "Pending",
@@ -102,11 +115,17 @@ export default function AssignedTasks() {
       if (!res.ok) throw new Error("Task create failed");
 
       Alert.alert("Success ✅", "Task successfully assigned!", [
-        { text: "OK", onPress: () => {
-          setUserSearch(""); setProjectSearch("");
-          setTaskTitle(""); setDueDate("");
-          setSelectedUser(null); setSelectedProject(null);
-        }}
+        {
+          text: "OK",
+          onPress: () => {
+            setUserSearch("");
+            setProjectSearch("");
+            setTaskTitle("");
+            setSelectedUsers([]);
+            setSelectedProject(null);
+            setSelectedDate(null);
+          },
+        },
       ]);
     } catch (err) {
       console.log(err);
@@ -115,21 +134,28 @@ export default function AssignedTasks() {
   };
 
   const filteredUsers = users.filter((u) =>
-    u.name.toLowerCase().includes(userSearch.toLowerCase())
+    u.name.toLowerCase().includes(userSearch.toLowerCase()),
   );
 
   const filteredProjects = projects.filter((p) =>
-    p.name.toLowerCase().includes(projectSearch.toLowerCase())
+    p.name.toLowerCase().includes(projectSearch.toLowerCase()),
   );
 
-  const selectedUserName = users.find((u) => u._id === selectedUser)?.name;
-  const selectedProjectName = projects.find((p) => p._id === selectedProject)?.name;
+  const selectedProjectName = projects.find(
+    (p) => p._id === selectedProject,
+  )?.name;
+
+  const formatDisplayDate = (date: Date) =>
+    date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
 
   return (
     <View style={styles.root}>
       <StatusBar barStyle="light-content" backgroundColor="#5f00be" />
 
-      {/* Header */}
       <LinearGradient colors={["#5f00be", "#127a6e"]} style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={22} color="#fff" />
@@ -139,200 +165,314 @@ export default function AssignedTasks() {
           <Text style={styles.headerSub}>Assign work to team members</Text>
         </View>
       </LinearGradient>
-
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        {/* Select User */}
-        <View style={styles.card}>
-          <Text style={styles.label}>
-            <Ionicons name="person-outline" size={14} color="#CBD5F5" /> Select User
-          </Text>
-
-          {selectedUser && (
-            <View style={styles.selectedBadge}>
-              <Ionicons name="checkmark-circle" size={16} color="#00A693" />
-              <Text style={styles.selectedBadgeText}>{selectedUserName}</Text>
-              <TouchableOpacity onPress={() => { setSelectedUser(null); setUserSearch(""); }}>
-                <Ionicons name="close-circle" size={16} color="#9CA3AF" />
-              </TouchableOpacity>
-            </View>
-          )}
-
-          <TextInput
-            placeholder="Search user..."
-            placeholderTextColor="#9CA3AF"
-            style={styles.input}
-            value={userSearch}
-            onChangeText={(t) => { setUserSearch(t); setShowUserDropdown(true); }}
-            onFocus={() => setShowUserDropdown(true)}
-          />
-
-          {showUserDropdown && filteredUsers.length > 0 && (
-            <View style={styles.dropdown}>
-              {filteredUsers.map((item) => (
-                <TouchableOpacity
-                  key={item._id}
-                  style={[styles.dropdownItem, selectedUser === item._id && styles.dropdownItemSelected]}
-                  onPress={() => {
-                    setSelectedUser(item._id);
-                    setUserSearch(item.name);
-                    setShowUserDropdown(false);
-                  }}
-                >
-                  <View style={styles.dropdownItemLeft}>
-                    <View style={styles.dropdownAvatar}>
-                      <Text style={styles.dropdownAvatarText}>{item.name.charAt(0).toUpperCase()}</Text>
-                    </View>
-                    <View>
-                      <Text style={styles.dropdownItemText}>{item.name}</Text>
-                      {item.department && <Text style={styles.dropdownItemSub}>{item.department}</Text>}
-                    </View>
-                  </View>
-                  {selectedUser === item._id && <Ionicons name="checkmark" size={16} color="#00A693" />}
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </View>
-
-        {/* Select Project */}
-        <View style={styles.card}>
-          <Text style={styles.label}>
-            <Ionicons name="folder-outline" size={14} color="#CBD5F5" /> Select Project
-          </Text>
-
-          {selectedProject && (
-            <View style={styles.selectedBadge}>
-              <Ionicons name="checkmark-circle" size={16} color="#00A693" />
-              <Text style={styles.selectedBadgeText}>{selectedProjectName}</Text>
-              <TouchableOpacity onPress={() => { setSelectedProject(null); setProjectSearch(""); }}>
-                <Ionicons name="close-circle" size={16} color="#9CA3AF" />
-              </TouchableOpacity>
-            </View>
-          )}
-
-          <TextInput
-            placeholder="Search project..."
-            placeholderTextColor="#9CA3AF"
-            style={styles.input}
-            value={projectSearch}
-            onChangeText={(t) => { setProjectSearch(t); setShowProjectDropdown(true); }}
-            onFocus={() => setShowProjectDropdown(true)}
-          />
-
-          {showProjectDropdown && filteredProjects.length > 0 && (
-            <View style={styles.dropdown}>
-              {filteredProjects.map((item) => (
-                <TouchableOpacity
-                  key={item._id}
-                  style={[styles.dropdownItem, selectedProject === item._id && styles.dropdownItemSelected]}
-                  onPress={() => {
-                    setSelectedProject(item._id);
-                    setProjectSearch(item.name);
-                    setShowProjectDropdown(false);
-                  }}
-                >
-                  <View style={styles.dropdownItemLeft}>
-                    <Ionicons name="folder" size={18} color="#9B42F2" style={{ marginRight: 8 }} />
-                    <Text style={styles.dropdownItemText}>{item.name}</Text>
-                  </View>
-                  {selectedProject === item._id && <Ionicons name="checkmark" size={16} color="#00A693" />}
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </View>
-
-        {/* Task Title */}
-        <View style={styles.card}>
-          <Text style={styles.label}>
-            <Ionicons name="create-outline" size={14} color="#CBD5F5" /> Task Title *
-          </Text>
-          <TextInput
-            placeholder="Enter task title..."
-            placeholderTextColor="#9CA3AF"
-            style={styles.input}
-            value={taskTitle}
-            onChangeText={setTaskTitle}
-            multiline
-          />
-        </View>
-
-        {/* Due Date */}
-        <View style={styles.card}>
-          <Text style={styles.label}>
-            <Ionicons name="calendar-outline" size={14} color="#CBD5F5" /> Due Date (optional)
-          </Text>
-          <TextInput
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor="#9CA3AF"
-            style={styles.input}
-            value={dueDate}
-            onChangeText={setDueDate}
-          />
-        </View>
-
-        {/* Summary */}
-        {(selectedUser || selectedProject || taskTitle) && (
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryTitle}>Task Summary</Text>
-            {selectedUserName && (
-              <View style={styles.summaryRow}>
-                <Ionicons name="person" size={14} color="#9CA3AF" />
-                <Text style={styles.summaryText}>{selectedUserName}</Text>
-              </View>
-            )}
-            {selectedProjectName && (
-              <View style={styles.summaryRow}>
-                <Ionicons name="folder" size={14} color="#9CA3AF" />
-                <Text style={styles.summaryText}>{selectedProjectName}</Text>
-              </View>
-            )}
-            {taskTitle ? (
-              <View style={styles.summaryRow}>
-                <Ionicons name="document-text" size={14} color="#9CA3AF" />
-                <Text style={styles.summaryText}>{taskTitle}</Text>
-              </View>
-            ) : null}
-            {dueDate ? (
-              <View style={styles.summaryRow}>
-                <Ionicons name="calendar" size={14} color="#9CA3AF" />
-                <Text style={styles.summaryText}>{dueDate}</Text>
-              </View>
-            ) : null}
-          </View>
-        )}
-
-        {/* Create Button */}
-        <TouchableOpacity
-          style={[styles.createBtn, (!selectedUser || !selectedProject || !taskTitle.trim()) && styles.createBtnDisabled]}
-          onPress={handleCreateTask}
-          activeOpacity={0.85}
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <LinearGradient
-            colors={(!selectedUser || !selectedProject || !taskTitle.trim()) ? ["#374151", "#374151"] : ["#5f00be", "#00A693"]}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            style={styles.createBtnGrad}
-          >
-            <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
-            <Text style={styles.createBtnText}>Create Task</Text>
-          </LinearGradient>
-        </TouchableOpacity>
+          {/* Select Users — Multiple */}
+          <View style={styles.card}>
+            <Text style={styles.label}>
+              <Ionicons name="people-outline" size={14} color="#CBD5F5" />{" "}
+              Select Users *
+            </Text>
 
-      </ScrollView>
+            {/* Selected Users Badges */}
+            {selectedUsers.length > 0 && (
+              <View style={styles.selectedBadgesRow}>
+                {selectedUsers.map((uid) => {
+                  const u = users.find((x) => x._id === uid);
+                  if (!u) return null;
+                  return (
+                    <View key={uid} style={styles.badge}>
+                      <Text style={styles.badgeText}>{u.name}</Text>
+                      <TouchableOpacity
+                        onPress={() => toggleUserSelection(uid)}
+                      >
+                        <Ionicons
+                          name="close-circle"
+                          size={15}
+                          color="#9CA3AF"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+
+            <TextInput
+              placeholder="Search user..."
+              placeholderTextColor="#9CA3AF"
+              style={styles.input}
+              value={userSearch}
+              onChangeText={(t) => {
+                setUserSearch(t);
+                setShowUserDropdown(true);
+              }}
+              onFocus={() => setShowUserDropdown(true)}
+            />
+
+            {showUserDropdown && filteredUsers.length > 0 && (
+              <View style={styles.dropdown}>
+                {filteredUsers.map((item) => {
+                  const isSelected = selectedUsers.includes(item._id);
+                  return (
+                    <TouchableOpacity
+                      key={item._id}
+                      style={[
+                        styles.dropdownItem,
+                        isSelected && styles.dropdownItemSelected,
+                      ]}
+                      onPress={() => toggleUserSelection(item._id)}
+                    >
+                      <View style={styles.dropdownItemLeft}>
+                        <View style={styles.dropdownAvatar}>
+                          <Text style={styles.dropdownAvatarText}>
+                            {item.name.charAt(0).toUpperCase()}
+                          </Text>
+                        </View>
+                        <View>
+                          <Text style={styles.dropdownItemText}>
+                            {item.name}
+                          </Text>
+                          {item.department && (
+                            <Text style={styles.dropdownItemSub}>
+                              {item.department}
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+                      {isSelected && (
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={18}
+                          color="#00A693"
+                        />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+                <TouchableOpacity
+                  style={styles.doneBtn}
+                  onPress={() => setShowUserDropdown(false)}
+                >
+                  <Text style={styles.doneBtnText}>
+                    Done ({selectedUsers.length} selected)
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          {/* Select Project — Optional */}
+          <View style={styles.card}>
+            <Text style={styles.label}>
+              <Ionicons name="folder-outline" size={14} color="#CBD5F5" />{" "}
+              Select Project (optional)
+            </Text>
+
+            {selectedProject && (
+              <View style={styles.selectedBadgesRow}>
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{selectedProjectName}</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSelectedProject(null);
+                      setProjectSearch("");
+                    }}
+                  >
+                    <Ionicons name="close-circle" size={15} color="#9CA3AF" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            <TextInput
+              placeholder="Search project..."
+              placeholderTextColor="#9CA3AF"
+              style={styles.input}
+              value={projectSearch}
+              onChangeText={(t) => {
+                setProjectSearch(t);
+                setShowProjectDropdown(true);
+              }}
+              onFocus={() => setShowProjectDropdown(true)}
+            />
+
+            {showProjectDropdown && filteredProjects.length > 0 && (
+              <View style={styles.dropdown}>
+                {filteredProjects.map((item) => (
+                  <TouchableOpacity
+                    key={item._id}
+                    style={[
+                      styles.dropdownItem,
+                      selectedProject === item._id &&
+                        styles.dropdownItemSelected,
+                    ]}
+                    onPress={() => {
+                      setSelectedProject(item._id);
+                      setProjectSearch(item.name);
+                      setShowProjectDropdown(false);
+                    }}
+                  >
+                    <View style={styles.dropdownItemLeft}>
+                      <Ionicons
+                        name="folder"
+                        size={18}
+                        color="#9B42F2"
+                        style={{ marginRight: 8 }}
+                      />
+                      <Text style={styles.dropdownItemText}>{item.name}</Text>
+                    </View>
+                    {selectedProject === item._id && (
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={18}
+                        color="#00A693"
+                      />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* Task Title */}
+          <View style={styles.card}>
+            <Text style={styles.label}>
+              <Ionicons name="create-outline" size={14} color="#CBD5F5" /> Task
+              Title *
+            </Text>
+            <TextInput
+              placeholder="Enter task title..."
+              placeholderTextColor="#9CA3AF"
+              style={styles.input}
+              value={taskTitle}
+              onChangeText={setTaskTitle}
+              multiline
+            />
+          </View>
+
+          {/* Due Date — Optional + Calendar */}
+          <View style={styles.card}>
+            <Text style={styles.label}>
+              <Ionicons name="calendar-outline" size={14} color="#CBD5F5" /> Due
+              Date (optional)
+            </Text>
+            <TouchableOpacity
+              style={styles.datePickerBtn}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Ionicons name="calendar" size={18} color="#9B42F2" />
+              <Text
+                style={[
+                  styles.datePickerText,
+                  !selectedDate && { color: "#9CA3AF" },
+                ]}
+              >
+                {selectedDate
+                  ? formatDisplayDate(selectedDate)
+                  : "Select due date"}
+              </Text>
+              {selectedDate && (
+                <TouchableOpacity onPress={() => setSelectedDate(null)}>
+                  <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+                </TouchableOpacity>
+              )}
+            </TouchableOpacity>
+            {showDatePicker && (
+              <DateTimePicker
+                value={selectedDate || new Date()}
+                mode="date"
+                display={Platform.OS === "ios" ? "spinner" : "default"}
+                minimumDate={new Date()}
+                onChange={(event, date) => {
+                  setShowDatePicker(Platform.OS === "ios");
+                  if (event.type === "set" && date) setSelectedDate(date);
+                }}
+              />
+            )}
+          </View>
+
+          {/* Summary */}
+          {(selectedUsers.length > 0 || selectedProject || taskTitle) && (
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryTitle}>Task Summary</Text>
+              {selectedUsers.length > 0 && (
+                <View style={styles.summaryRow}>
+                  <Ionicons name="people" size={14} color="#9CA3AF" />
+                  <Text style={styles.summaryText}>
+                    {selectedUsers
+                      .map((id) => users.find((u) => u._id === id)?.name)
+                      .join(", ")}
+                  </Text>
+                </View>
+              )}
+              {selectedProject && (
+                <View style={styles.summaryRow}>
+                  <Ionicons name="folder" size={14} color="#9CA3AF" />
+                  <Text style={styles.summaryText}>{selectedProjectName}</Text>
+                </View>
+              )}
+              {taskTitle ? (
+                <View style={styles.summaryRow}>
+                  <Ionicons name="document-text" size={14} color="#9CA3AF" />
+                  <Text style={styles.summaryText}>{taskTitle}</Text>
+                </View>
+              ) : null}
+              {selectedDate ? (
+                <View style={styles.summaryRow}>
+                  <Ionicons name="calendar" size={14} color="#9CA3AF" />
+                  <Text style={styles.summaryText}>
+                    {formatDisplayDate(selectedDate)}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          )}
+
+          {/* Create Button */}
+          <TouchableOpacity
+            style={[
+              styles.createBtn,
+              (selectedUsers.length === 0 || !taskTitle.trim()) &&
+                styles.createBtnDisabled,
+            ]}
+            onPress={handleCreateTask}
+            activeOpacity={0.85}
+          >
+            <LinearGradient
+              colors={
+                selectedUsers.length === 0 || !taskTitle.trim()
+                  ? ["#374151", "#374151"]
+                  : ["#5f00be", "#00A693"]
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.createBtnGrad}
+            >
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={20}
+                color="#fff"
+              />
+              <Text style={styles.createBtnText}>Create Task</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: "#EEF3FB",
-  },
+  root: { flex: 1, backgroundColor: "#EEF3FB" },
   header: {
     paddingTop: 55,
     paddingBottom: 20,
@@ -349,23 +489,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  headerTitle: {
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "800",
-  },
-  headerSub: {
-    color: "rgba(255,255,255,0.75)",
-    fontSize: 12,
-    marginTop: 2,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 40,
-  },
+  headerTitle: { color: "#fff", fontSize: 20, fontWeight: "800" },
+  headerSub: { color: "rgba(255,255,255,0.75)", fontSize: 12, marginTop: 2 },
+  scroll: { flex: 1 },
+  scrollContent: { padding: 16, paddingBottom: 40 },
   card: {
     backgroundColor: "#0F2A5F",
     borderRadius: 16,
@@ -385,29 +512,28 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 14,
   },
-  selectedBadge: {
+  selectedBadgesRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 10,
+  },
+  badge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "rgba(0,166,147,0.15)",
-    borderRadius: 8,
+    backgroundColor: "rgba(0,166,147,0.2)",
+    borderRadius: 20,
     paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginBottom: 8,
-    alignSelf: "flex-start",
+    paddingVertical: 5,
   },
-  selectedBadgeText: {
-    color: "#00A693",
-    fontSize: 13,
-    fontWeight: "600",
-    flex: 1,
-  },
+  badgeText: { color: "#00A693", fontSize: 13, fontWeight: "600" },
   dropdown: {
     marginTop: 6,
     backgroundColor: "#081B43",
     borderRadius: 10,
     overflow: "hidden",
-    maxHeight: 200,
+    maxHeight: 250,
   },
   dropdownItem: {
     flexDirection: "row",
@@ -417,14 +543,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: "#1E3A8A",
   },
-  dropdownItemSelected: {
-    backgroundColor: "rgba(0,166,147,0.1)",
-  },
-  dropdownItemLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
+  dropdownItemSelected: { backgroundColor: "rgba(0,166,147,0.12)" },
+  dropdownItemLeft: { flexDirection: "row", alignItems: "center", flex: 1 },
   dropdownAvatar: {
     width: 32,
     height: 32,
@@ -434,21 +554,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 10,
   },
-  dropdownAvatarText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 14,
+  dropdownAvatarText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+  dropdownItemText: { color: "#fff", fontSize: 14, fontWeight: "500" },
+  dropdownItemSub: { color: "#9CA3AF", fontSize: 11, marginTop: 1 },
+  doneBtn: {
+    padding: 12,
+    alignItems: "center",
+    backgroundColor: "rgba(95,0,190,0.3)",
   },
-  dropdownItemText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "500",
+  doneBtnText: { color: "#9B42F2", fontWeight: "700", fontSize: 13 },
+  datePickerBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "#081B43",
+    padding: 12,
+    borderRadius: 10,
   },
-  dropdownItemSub: {
-    color: "#9CA3AF",
-    fontSize: 11,
-    marginTop: 1,
-  },
+  datePickerText: { color: "#fff", fontSize: 14, flex: 1 },
   summaryCard: {
     backgroundColor: "#0F2A5F",
     borderRadius: 16,
@@ -471,19 +594,9 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 6,
   },
-  summaryText: {
-    color: "#E0E7FF",
-    fontSize: 13,
-    flex: 1,
-  },
-  createBtn: {
-    borderRadius: 14,
-    overflow: "hidden",
-    marginTop: 4,
-  },
-  createBtnDisabled: {
-    opacity: 0.6,
-  },
+  summaryText: { color: "#E0E7FF", fontSize: 13, flex: 1 },
+  createBtn: { borderRadius: 14, overflow: "hidden", marginTop: 4 },
+  createBtnDisabled: { opacity: 0.6 },
   createBtnGrad: {
     flexDirection: "row",
     alignItems: "center",
@@ -498,7 +611,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
 });
-
 
 // import {
 //   View,
@@ -548,14 +660,14 @@ const styles = StyleSheet.create({
 //         }
 
 //         const userRes = await fetch(
-//           `${process.env.EXPO_PUBLIC_API_URL}/api/user`,
+//           `${apiUrl}/api/user`,
 //           { headers: { Authorization: `Bearer ${token}` } }
 //         );
 //         const userData = await userRes.json();
 //         setUsers(Array.isArray(userData) ? userData : []);
 
 //         const projectRes = await fetch(
-//           `${process.env.EXPO_PUBLIC_API_URL}/api/project`,
+//           `${apiUrl}/api/project`,
 //           { headers: { Authorization: `Bearer ${token}` } }
 //         );
 //         const projectData = await projectRes.json();
@@ -583,7 +695,7 @@ const styles = StyleSheet.create({
 //       const token = await SecureStore.getItemAsync("token");
 //       const adminId = await SecureStore.getItemAsync("adminId");
 
-//       const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/task`, {
+//       const res = await fetch(`${apiUrl}/api/task`, {
 //         method: "POST",
 //         headers: {
 //           "Content-Type": "application/json",
@@ -628,7 +740,7 @@ const styles = StyleSheet.create({
 //       style={styles.dropdown}
 //       nestedScrollEnabled
 //       keyboardShouldPersistTaps="handled"
-      
+
 //     >
 //       {data.map((item) => (
 //         <TouchableOpacity
@@ -812,12 +924,12 @@ const styles = StyleSheet.create({
 //   const [selectedProject, setSelectedProject] = useState<string | null>(null);
 
 //   useEffect(() => {
-//     fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/team`)
+//     fetch(`${apiUrl}/api/team`)
 //       .then((res) => res.json())
 //       .then((data: TeamType[]) => setTeams(Array.isArray(data) ? data : []))
 //       .catch((err) => console.log(err));
 
-//     fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/project`)
+//     fetch(`${apiUrl}/api/project`)
 //       .then((res) => res.json())
 //       .then((data: ProjectType[]) => setProjects(Array.isArray(data) ? data : []))
 //       .catch((err) => console.log(err));
@@ -846,7 +958,7 @@ const styles = StyleSheet.create({
 //     const currentAdminId = "69df5bca904e3f692fc504d3";
 
 //     try {
-//       const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/task`, {
+//       const res = await fetch(`${apiUrl}/api/task`, {
 //         method: "POST",
 //         headers: {
 //           "Content-Type": "application/json",
@@ -1037,7 +1149,6 @@ const styles = StyleSheet.create({
 //   },
 // });
 
-
 // import {
 //   View,
 //   Text,
@@ -1074,12 +1185,12 @@ const styles = StyleSheet.create({
 
 //   // ✅ API CALL
 //   useEffect(() => {
-//     fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/team`)
+//     fetch(`${apiUrl}/api/team`)
 //       .then(res => res.json())
 //       .then((data: TeamType[]) => setTeams(data))
 //       .catch(err => console.log(err));
 
-//     fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/project`)
+//     fetch(`${apiUrl}/api/project`)
 //       .then(res => res.json())
 //       .then((data: ProjectType[]) => setProjects(data))
 //       .catch(err => console.log(err));
@@ -1102,7 +1213,7 @@ const styles = StyleSheet.create({
 //     }
 
 //     try {
-//       await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/task`, {
+//       await fetch(`${apiUrl}/api/task`, {
 //         method: "POST",
 //         headers: {
 //           "Content-Type": "application/json",
@@ -1122,7 +1233,7 @@ const styles = StyleSheet.create({
 
 //   return (
 //     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      
+
 //       {/* HEADER */}
 //       <LinearGradient
 //         colors={["#5f00be", "#127a6e"]}

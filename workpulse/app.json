@@ -4,7 +4,7 @@
     "slug": "workpulse",
     "version": "1.0.0",
     "orientation": "portrait",
-      "icon": "./assets/images/Blue and White Modern Medical Logo (3).png",
+    "icon": "./assets/images/Blue and White Modern Medical Logo (3).png",
     "scheme": "workpulse",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -14,12 +14,14 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
-          "foregroundImage": "./assets/images/Blue and White Modern Medical Logo (3).png",
+        "foregroundImage": "./assets/images/Blue and White Modern Medical Logo (3).png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "softwareKeyboardLayoutMode": "resize",
+      "package": "com.vipprow.workpulse"
     },
     "web": {
       "output": "static",
@@ -39,11 +41,18 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "208b0a26-5864-4f12-a8ad-42b076cdc961"
+      }
     }
   }
 }

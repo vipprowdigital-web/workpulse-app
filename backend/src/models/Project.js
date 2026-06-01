@@ -12,29 +12,37 @@ const projectSchema = new mongoose.Schema(
       ref: "Team",
       default: null,
     },
+    
     dueDate: {
       type: Date,
       default: null,
     },
-    createdBy: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: "Admin",
-  required: true,
-},
 
- companyId: {
+    assignedTo: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Admin",
+      required: true,
+    },
+
+    companyId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Admin",
       index: true,
       default: null,
     },
   },
-  
-  { timestamps: true }
+
+  { timestamps: true },
 );
 
 export default mongoose.model("Project", projectSchema);
-
 
 // import mongoose from "mongoose";
 

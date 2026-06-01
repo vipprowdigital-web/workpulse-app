@@ -11,6 +11,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
 import * as SecureStore from "expo-secure-store";
+import { apiUrl } from "@/config/env";
 
 type TaskType = {
   _id: string;
@@ -29,9 +30,11 @@ type TaskType = {
 
 export default function UserHome() {
   const [tasks, setTasks] = useState<TaskType[]>([]);
-  const [activeTab, setActiveTab] = useState<"Pending" | "Completed">("Pending");
+  const [activeTab, setActiveTab] = useState<"Pending" | "Completed">(
+    "Pending",
+  );
   const [refreshing, setRefreshing] = useState(false);
-   const [adminName, setAdminName] = useState("Aman");
+  const [adminName, setAdminName] = useState("Aman");
   const [currentDate, setCurrentDate] = useState("Monday, 27 April");
 
   useEffect(() => {
@@ -40,8 +43,25 @@ export default function UserHome() {
 
   const fetchTasks = async () => {
     try {
-      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/task`);
+      const token = await SecureStore.getItemAsync("token");
+      const userId = await SecureStore.getItemAsync("userId");
+
+      if (!token || !userId) {
+        Alert.alert("Error", "Login session missing");
+        return;
+      }
+
+      const res = await fetch(`${apiUrl}/api/task/user/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
       const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Tasks fetch failed");
+      }
 
       if (Array.isArray(data)) {
         setTasks(data);
@@ -69,12 +89,12 @@ export default function UserHome() {
 
   const pendingCount = useMemo(
     () => tasks.filter((task) => task.status === "Pending").length,
-    [tasks]
+    [tasks],
   );
 
   const completedCount = useMemo(
     () => tasks.filter((task) => task.status === "Completed").length,
-    [tasks]
+    [tasks],
   );
 
   const formatDueDate = (dateString?: string | null) => {
@@ -91,15 +111,15 @@ export default function UserHome() {
 
   const handleToggleTask = async (taskId: string) => {
     try {
-      const res = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/task/toggle/${taskId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const token = await SecureStore.getItemAsync("token");
+
+      const res = await fetch(`${apiUrl}/api/task/toggle/${taskId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       const data = await res.json();
 
@@ -108,7 +128,7 @@ export default function UserHome() {
       }
 
       setTasks((prev) =>
-        prev.map((task) => (task._id === taskId ? data : task))
+        prev.map((task) => (task._id === taskId ? data : task)),
       );
     } catch (error: any) {
       console.log("TOGGLE TASK ERROR:", error);
@@ -138,7 +158,7 @@ export default function UserHome() {
               </View>
               <View style={styles.welcomeTextGroup}>
                 <Text style={styles.helloText}>Hello, {adminName} 👋</Text>
-                                <Text style={styles.dateLabel}>{currentDate}</Text>
+                <Text style={styles.dateLabel}>{currentDate}</Text>
               </View>
             </View>
 
@@ -152,7 +172,9 @@ export default function UserHome() {
 
           <View style={styles.headerFooter}>
             <Text style={styles.motivationText}>
-              You have <Text style={{ fontWeight: "bold" }}>{pendingCount}</Text> pending tasks
+              You have{" "}
+              <Text style={{ fontWeight: "bold" }}>{pendingCount}</Text> pending
+              tasks
             </Text>
           </View>
         </LinearGradient>
@@ -177,13 +199,23 @@ export default function UserHome() {
 
         <View style={styles.tabRow}>
           <TouchableOpacity onPress={() => setActiveTab("Pending")}>
-            <Text style={activeTab === "Pending" ? styles.activeTab : styles.inactiveTab}>
+            <Text
+              style={
+                activeTab === "Pending" ? styles.activeTab : styles.inactiveTab
+              }
+            >
               Pending
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => setActiveTab("Completed")}>
-            <Text style={activeTab === "Completed" ? styles.activeTab : styles.inactiveTab}>
+            <Text
+              style={
+                activeTab === "Completed"
+                  ? styles.activeTab
+                  : styles.inactiveTab
+              }
+            >
               Completed
             </Text>
           </TouchableOpacity>
@@ -194,14 +226,19 @@ export default function UserHome() {
             <View key={task._id} style={styles.taskItem}>
               <View style={styles.taskLeft}>
                 <Ionicons
-                  name={task.status === "Completed" ? "checkmark-circle" : "ellipse-outline"}
+                  name={
+                    task.status === "Completed"
+                      ? "checkmark-circle"
+                      : "ellipse-outline"
+                  }
                   size={20}
                   color={task.status === "Completed" ? "#00A693" : "#3B82F6"}
                 />
                 <View style={{ marginLeft: 10, flex: 1 }}>
                   <Text style={styles.taskText}>{task.title}</Text>
                   <Text style={styles.metaText}>
-                    {task.project?.name || "No project"} • Due: {formatDueDate(task.dueDate)}
+                    {task.project?.name || "No project"} • Due:{" "}
+                    {formatDueDate(task.dueDate)}
                   </Text>
                 </View>
               </View>
@@ -209,7 +246,9 @@ export default function UserHome() {
               <TouchableOpacity
                 style={[
                   styles.toggleBtn,
-                  task.status === "Completed" ? styles.completedBtn : styles.pendingBtn,
+                  task.status === "Completed"
+                    ? styles.completedBtn
+                    : styles.pendingBtn,
                 ]}
                 onPress={() => handleToggleTask(task._id)}
               >

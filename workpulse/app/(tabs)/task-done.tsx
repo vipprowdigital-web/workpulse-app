@@ -7,8 +7,9 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import * as SecureStore from "expo-secure-store";
 import { useFocusEffect } from "expo-router";
+import { apiUrl } from "@/config/env";
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+const BASE_URL = apiUrl;
 
 type TaskStatus = "Pending" | "Completed" | "Approved" | "Reassigned";
 type AssignedUser = { _id: string; name: string; email: string; department?: string };
@@ -491,7 +492,7 @@ const styles = StyleSheet.create({
 // import * as SecureStore from "expo-secure-store"; // ✅ SecureStore
 
 // // ✅ .env se BASE_URL — apni .env file mein EXPO_PUBLIC_API_URL=http://192.168.x.x:5000/api likho
-// const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+// const BASE_URL = apiUrl;
 
 // type TaskStatus = "Pending" | "Completed" | "Approved" | "Reassigned";
 // type AssignedUser = { _id: string; name: string; email: string; department?: string };

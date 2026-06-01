@@ -10,13 +10,15 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
+  StatusBar,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as SecureStore from "expo-secure-store";
 import { Ionicons } from "@expo/vector-icons";
 import Button from "@/components/button";
-
-
+import { apiUrl } from "@/config/env";
 
 type Department = { _id: string; name: string };
 
@@ -28,6 +30,7 @@ export default function AddUserScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [departments, setDepartments] = useState<Department[]>([]);
   const [deptModalVisible, setDeptModalVisible] = useState(false);
@@ -35,7 +38,7 @@ export default function AddUserScreen() {
   const [creatingDept, setCreatingDept] = useState(false);
   const [pickerVisible, setPickerVisible] = useState(false);
 
-  const API_BASE = process.env.EXPO_PUBLIC_API_URL?.trim();
+  const API_BASE = apiUrl?.trim();
 
   useEffect(() => {
     fetchDepartments();
@@ -59,9 +62,11 @@ export default function AddUserScreen() {
       Alert.alert("Validation", "Department name required");
       return;
     }
+
     try {
       setCreatingDept(true);
       const token = await SecureStore.getItemAsync("token");
+
       const res = await fetch(`${API_BASE}/api/department`, {
         method: "POST",
         headers: {
@@ -70,11 +75,14 @@ export default function AddUserScreen() {
         },
         body: JSON.stringify({ name: newDeptName.trim() }),
       });
+
       const data = await res.json();
+
       if (!res.ok) {
         Alert.alert("Error", data.message || "Failed to create department");
         return;
       }
+
       setDepartments((prev) => [data, ...prev]);
       setNewDeptName("");
       setDeptModalVisible(false);
@@ -91,17 +99,22 @@ export default function AddUserScreen() {
       Alert.alert("Validation", "Please fill all fields");
       return;
     }
+
     if (mobileNo.length < 10) {
       Alert.alert("Validation", "Please enter a valid mobile number");
       return;
     }
+
     try {
       setLoading(true);
+
       const token = await SecureStore.getItemAsync("token");
+
       if (!token) {
         Alert.alert("Error", "Admin token missing. Please login again.");
         return;
       }
+
       const response = await fetch(`${API_BASE}/api/user/add-user`, {
         method: "POST",
         headers: {
@@ -110,11 +123,14 @@ export default function AddUserScreen() {
         },
         body: JSON.stringify({ department, name, mobileNo, email, password }),
       });
+
       const data = await response.json();
+
       if (!response.ok) {
         Alert.alert("Error", data.message || "User creation failed");
         return;
       }
+
       Alert.alert("Success", "User account created successfully");
       setDepartment("");
       setDepartmentId("");
@@ -130,108 +146,133 @@ export default function AddUserScreen() {
   };
 
   return (
-    
     <SafeAreaView style={styles.container}>
-
-      <ScrollView
-        contentContainerStyle={styles.wrapper}
-        showsVerticalScrollIndicator={false}
+      {/* StatusBar spacing config */}
+      <StatusBar barStyle="dark-content" backgroundColor="#F3F7FF" translucent />
+      
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === "ios" ? "padding" : "padding"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : -60}
       >
-        <LinearGradient
-          colors={["#081B43", "#5f00be", "#127a6e"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.topCard}
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.wrapper}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         >
-          <Text style={styles.topTitle}>Add User</Text>
-          <Text style={styles.topSubTitle}>
-            Create a new user account manually
-          </Text>
-        </LinearGradient>
+          {/* Header Card Container */}
+          <LinearGradient
+            colors={["#081B43", "#5f00be", "#127a6e"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.topCard}
+          >
+            <Text style={styles.topTitle}>Add User</Text>
+            <Text style={styles.topSubTitle}>
+              Create a new user account manually
+            </Text>
+          </LinearGradient>
 
-        <View style={styles.formCard}>
-          {/* Department Picker */}
-          <Text style={styles.label}>Department</Text>
-          <View style={styles.deptRow}>
-            <TouchableOpacity
-              style={styles.deptPicker}
-              onPress={() => setPickerVisible(true)}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={[
-                  styles.deptPickerText,
-                  !department && { color: "#9CA3AF" },
-                ]}
+          {/* White Input Form Card */}
+          <View style={styles.formCard}>
+            <Text style={styles.label}>Department</Text>
+            <View style={styles.deptRow}>
+              <TouchableOpacity
+                style={styles.deptPicker}
+                onPress={() => setPickerVisible(true)}
+                activeOpacity={0.7}
               >
-                {department || "Select Department"}
-              </Text>
-              <Ionicons name="chevron-down" size={18} color="#6B7280" />
-            </TouchableOpacity>
+                <Text
+                  style={[
+                    styles.deptPickerText,
+                    !department && { color: "#9CA3AF" },
+                  ]}
+                >
+                  {department || "Select Department"}
+                </Text>
+                <Ionicons name="chevron-down" size={18} color="#6B7280" />
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.addDeptBtn}
-              onPress={() => setDeptModalVisible(true)}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="add" size={20} color="#fff" />
-            </TouchableOpacity>
-          </View>
-
-          <Text style={styles.label}>Name</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter full name"
-            placeholderTextColor="#7A7A7A"
-            value={name}
-            onChangeText={setName}
-          />
-
-          <Text style={styles.label}>Mobile Number</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter mobile number"
-            placeholderTextColor="#7A7A7A"
-            keyboardType="phone-pad"
-            value={mobileNo}
-            onChangeText={setMobileNo}
-          />
-
-          <Text style={styles.label}>Email ID</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter email address"
-            placeholderTextColor="#7A7A7A"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={setEmail}
-          />
-
-          <Text style={styles.label}>Password</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Create password"
-            placeholderTextColor="#7A7A7A"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-
-          <View style={styles.buttonWrap}>
-            <Button
-              title={loading ? "Creating..." : "Create Account"}
-              onPress={handleCreateUser}
-              loading={loading}
-            />
-          </View>
-          {loading && (
-            <View style={styles.loaderWrap}>
-              <ActivityIndicator size="small" color="#5f00be" />
+              <TouchableOpacity
+                style={styles.addDeptBtn}
+                onPress={() => setDeptModalVisible(true)}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="add" size={20} color="#fff" />
+              </TouchableOpacity>
             </View>
-          )}
-        </View>
-      </ScrollView>
+
+            <Text style={styles.label}>Name</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter full name"
+              placeholderTextColor="#7A7A7A"
+              value={name}
+              onChangeText={setName}
+              returnKeyType="next"
+            />
+
+            <Text style={styles.label}>Mobile Number</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter mobile number"
+              placeholderTextColor="#7A7A7A"
+              keyboardType="phone-pad"
+              value={mobileNo}
+              onChangeText={setMobileNo}
+              returnKeyType="next"
+            />
+
+            <Text style={styles.label}>Email ID</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter email address"
+              placeholderTextColor="#7A7A7A"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
+              returnKeyType="next"
+            />
+
+            <Text style={styles.label}>Password</Text>
+            <View style={styles.passwordInputBox}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Create password"
+                placeholderTextColor="#7A7A7A"
+                secureTextEntry={!showPassword}
+                value={password}
+                onChangeText={setPassword}
+                returnKeyType="done"
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <Ionicons
+                  name={showPassword ? "eye-outline" : "eye-off-outline"}
+                  size={20}
+                  color="#7A7A7A"
+                />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.buttonWrap}>
+              <Button
+                title={loading ? "Creating..." : "Create Account"}
+                onPress={handleCreateUser}
+                loading={loading}
+              />
+            </View>
+
+            {loading && (
+              <View style={styles.loaderWrap}>
+                <ActivityIndicator size="small" color="#5f00be" />
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Department Picker Modal */}
       <Modal
@@ -249,7 +290,11 @@ export default function AddUserScreen() {
                 <Ionicons name="close" size={22} color="#455A64" />
               </TouchableOpacity>
             </View>
-            <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+
+            <ScrollView
+              contentContainerStyle={{ paddingBottom: 20 }}
+              keyboardShouldPersistTaps="handled"
+            >
               {departments.length === 0 ? (
                 <View style={styles.emptyDept}>
                   <Ionicons name="business-outline" size={36} color="#CBD5E1" />
@@ -302,53 +347,88 @@ export default function AddUserScreen() {
         animationType="slide"
         onRequestClose={() => setDeptModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalSheet, { maxHeight: "40%" }]}>
-            <View style={styles.modalHandle} />
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>New Department</Text>
-              <TouchableOpacity onPress={() => setDeptModalVisible(false)}>
-                <Ionicons name="close" size={22} color="#455A64" />
-              </TouchableOpacity>
-            </View>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalSheet, { maxHeight: "40%" }]}>
+              <View style={styles.modalHandle} />
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>New Department</Text>
+                <TouchableOpacity onPress={() => setDeptModalVisible(false)}>
+                  <Ionicons name="close" size={22} color="#455A64" />
+                </TouchableOpacity>
+              </View>
 
-            <View style={styles.newDeptForm}>
-              <TextInput
-                style={styles.newDeptInput}
-                placeholder="e.g. Finance, Operations..."
-                placeholderTextColor="#9CA3AF"
-                value={newDeptName}
-                onChangeText={setNewDeptName}
-                autoFocus
-              />
-              <TouchableOpacity
-                style={[styles.createDeptBtn, creatingDept && { opacity: 0.7 }]}
-                onPress={handleCreateDepartment}
-                disabled={creatingDept}
-                activeOpacity={0.8}
-              >
-                {creatingDept ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={styles.createDeptBtnText}>
-                    Create Department
-                  </Text>
-                )}
-              </TouchableOpacity>
+              <View style={styles.newDeptForm}>
+                <TextInput
+                  style={styles.newDeptInput}
+                  placeholder="e.g. Finance, Operations..."
+                  placeholderTextColor="#9CA3AF"
+                  value={newDeptName}
+                  onChangeText={setNewDeptName}
+                  autoFocus
+                />
+                <TouchableOpacity
+                  style={[
+                    styles.createDeptBtn,
+                    creatingDept && { opacity: 0.7 },
+                  ]}
+                  onPress={handleCreateDepartment}
+                  disabled={creatingDept}
+                  activeOpacity={0.8}
+                >
+                  {creatingDept ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.createDeptBtnText}>
+                      Create Department
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F3F7FF" },
-  wrapper: { padding: 16, paddingBottom: 30, paddingTop: 70  },
-  topCard: { borderRadius: 22, padding: 20, marginTop: 20, marginBottom: 18 },
-  topTitle: { color: "#fff", fontSize: 24, fontWeight: "800" },
-  topSubTitle: { color: "rgba(255,255,255,0.85)", fontSize: 14, marginTop: 6 },
+  container: {
+    flex: 1,
+    backgroundColor: "#F3F7FF",
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scroll: {
+    flex: 1,
+  },
+  wrapper: {
+    flexGrow: 1,
+    padding: 16,
+    paddingBottom: 60,
+    // 🚨 YAHAN BADLAV KIYA HAI: Top margin badha kar 80 kiya taaki status bar se niche rhe.
+    paddingTop: Platform.OS === "android" ? 80 : 30, 
+  },
+  topCard: {
+    borderRadius: 22,
+    padding: 20,
+    marginBottom: 20,
+  },
+  topTitle: {
+    color: "#fff",
+    fontSize: 24,
+    fontWeight: "800",
+  },
+  topSubTitle: {
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 14,
+    marginTop: 6,
+  },
   formCard: {
     backgroundColor: "#fff",
     borderRadius: 22,
@@ -376,7 +456,25 @@ const styles = StyleSheet.create({
     color: "#081B43",
     backgroundColor: "#F9FBFF",
   },
-  deptRow: { flexDirection: "row", gap: 10 },
+  passwordInputBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#D8E2F0",
+    borderRadius: 14,
+    backgroundColor: "#F9FBFF",
+    paddingHorizontal: 14,
+    height: 52,
+  },
+  passwordInput: {
+    flex: 1,
+    fontSize: 14,
+    color: "#081B43",
+  },
+  deptRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
   deptPicker: {
     flex: 1,
     height: 52,
@@ -389,7 +487,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  deptPickerText: { fontSize: 14, color: "#081B43", flex: 1 },
+  deptPickerText: {
+    fontSize: 14,
+    color: "#081B43",
+    flex: 1,
+  },
   addDeptBtn: {
     width: 52,
     height: 52,
@@ -398,10 +500,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  buttonWrap: { marginTop: 22 },
-  loaderWrap: { marginTop: 12, alignItems: "center" },
-
-  // Modals
+  buttonWrap: {
+    marginTop: 22,
+  },
+  loaderWrap: {
+    marginTop: 12,
+    alignItems: "center",
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.35)",
@@ -433,7 +538,11 @@ const styles = StyleSheet.create({
     borderBottomColor: "#F0F4F8",
     marginBottom: 10,
   },
-  modalTitle: { fontSize: 17, fontWeight: "800", color: "#1A2E44" },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: "#1A2E44",
+  },
   deptOption: {
     flexDirection: "row",
     alignItems: "center",
@@ -443,17 +552,29 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     backgroundColor: "#F5F7FF",
   },
-  deptOptionActive: { backgroundColor: "#5f00be" },
+  deptOptionActive: {
+    backgroundColor: "#5f00be",
+  },
   deptOptionText: {
     flex: 1,
     fontSize: 15,
     fontWeight: "600",
     color: "#1A2E44",
   },
-  emptyDept: { alignItems: "center", paddingVertical: 30, gap: 10 },
-  emptyDeptText: { color: "#94A3B8", fontSize: 14, textAlign: "center" },
-
-  newDeptForm: { paddingVertical: 10, gap: 14 },
+  emptyDept: {
+    alignItems: "center",
+    paddingVertical: 30,
+    gap: 10,
+  },
+  emptyDeptText: {
+    color: "#94A3B8",
+    fontSize: 14,
+    textAlign: "center",
+  },
+  newDeptForm: {
+    paddingVertical: 10,
+    gap: 14,
+  },
   newDeptInput: {
     height: 52,
     borderWidth: 1,
@@ -471,5 +592,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  createDeptBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  createDeptBtnText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 15,
+  },
 });
