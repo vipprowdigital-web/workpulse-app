@@ -118,7 +118,7 @@ export const getMyTasks = async (req, res) => {
   }
 };
 
-// 5. Admin Review Feed (Strict Filter)
+// 5. Admin Review Feed (Strict Filter) - FIXED FOR UNKNOWN USER
 export const getCompletedTasksFeed = async (req, res) => {
   try {
     const tasks = await Task.find({
@@ -131,6 +131,7 @@ export const getCompletedTasksFeed = async (req, res) => {
       .populate("project", "name")
       .populate("team", "name")
       .populate("createdBy", "companyName email")
+      .populate("userProgress.user", "name email mobileNo department") // 👈 YEH LINE MISSING THI, ISSI SE NAME AAYEGA!
       .sort({ updatedAt: -1 });
 
     res.json(tasks);

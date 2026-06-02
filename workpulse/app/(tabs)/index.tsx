@@ -12,18 +12,19 @@ import {
   Pressable,
   TextInput,
   ActivityIndicator,
+  StatusBar,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Button from "@/components/button";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import * as SecureStore from "expo-secure-store";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 
 type TaskType = {
   _id: string;
   title: string;
-  status: "Pending" | "Completed" | "Reassigned";
+  status: "Pending" | "Completed" | "Reassigned" | "Approved";
   dueDate?: string | null;
   createdAt?: string;
   project?: { _id: string; name: string } | null;
@@ -51,7 +52,6 @@ export default function Dashboard() {
     loadRole();
   }, []);
 
-  // Role load hone tak kuch mat dikhao
   if (role === null) {
     return (
       <View
@@ -71,6 +71,9 @@ export default function Dashboard() {
   return <AdminDashboard />;
 }
 
+// ════════════════════════════════════════════════
+// ADMIN DASHBOARD
+// ════════════════════════════════════════════════
 function AdminDashboard() {
   const [projects, setProjects] = useState<ProjectStatusType[]>([]);
   const [selectedProject, setSelectedProject] =
@@ -81,14 +84,8 @@ function AdminDashboard() {
   const [showProjectList, setShowProjectList] = useState(false);
   const [adminName, setAdminName] = useState("Admin");
   const [currentDate, setCurrentDate] = useState("");
-
-  useEffect(() => {
-    const init = async () => {
-      await loadAdminData();
-      await fetchProjectStatus();
-    };
-    init();
-  }, []);
+  const [refreshing, setRefreshing] = useState(false);
+  const [reviewCount, setReviewCount] = useState(0);
 
   const loadAdminData = async () => {
     const name = await SecureStore.getItemAsync("adminName");
@@ -115,11 +112,57 @@ function AdminDashboard() {
       const data = await res.json();
       if (Array.isArray(data)) {
         setProjects(data);
-        setSelectedProject(data.length > 0 ? data[0] : null);
+        if (data.length > 0 && !selectedProject) {
+          setSelectedProject(data[0]);
+        } else if (data.length > 0 && selectedProject) {
+          const updatedSelected = data.find(p => p._id === selectedProject._id);
+          if (updatedSelected) setSelectedProject(updatedSelected);
+        }
       }
     } catch (error) {
       console.log("Project status error:", error);
     }
+  };
+
+  // ✅ Review Count Fetch Mechanism (Completed and Pending for Approval)
+  const fetchReviewCount = async () => {
+    try {
+      const token = await SecureStore.getItemAsync("token");
+      const res = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/task/feed/completed`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        // Count those tasks that are waiting for action (Completed or Pending status)
+        const pendingReviews = data.filter(
+          (t: TaskType) => t.status === "Completed" || t.status === "Pending"
+        ).length;
+        setReviewCount(pendingReviews);
+      }
+    } catch (error) {
+      console.log("Review count fetch error:", error);
+    }
+  };
+
+  const initData = useCallback(async () => {
+    await loadAdminData();
+    await fetchProjectStatus();
+    await fetchReviewCount();
+  }, [selectedProject]);
+
+  useFocusEffect(
+    useCallback(() => {
+      initData();
+    }, [initData])
+  );
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await initData();
+    setRefreshing(false);
   };
 
   const filteredTasks = useMemo(() => {
@@ -138,7 +181,11 @@ function AdminDashboard() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={{ paddingBottom: 20 }}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#5f00be"]} />
+      }
     >
+    <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       <View style={styles.islandWrapper}>
         <LinearGradient
           colors={["#5f00be", "#00A693"]}
@@ -180,7 +227,7 @@ function AdminDashboard() {
           <View style={styles.headerFooter}>
             <Text style={styles.motivationText}>
               You have{" "}
-              <Text style={{ fontWeight: "bold" }}>{filteredTasks.length}</Text>{" "}
+              <Text style={{ fontWeight: "bold" }}>{reviewCount}</Text>{" "}
               tasks to review!
             </Text>
           </View>
@@ -321,6 +368,9 @@ function AdminDashboard() {
   );
 }
 
+// ════════════════════════════════════════════════
+// USER DASHBOARD
+// ════════════════════════════════════════════════
 function UserDashboard() {
   const [tasks, setTasks] = useState<TaskType[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -329,15 +379,6 @@ function UserDashboard() {
   const [descModalVisible, setDescModalVisible] = useState(false);
   const [pendingToggleId, setPendingToggleId] = useState<string | null>(null);
   const [descText, setDescText] = useState("");
-
-  // ✅ await karke sequence mein load karo
-  useEffect(() => {
-    const init = async () => {
-      await loadUserData();
-      await fetchTasks();
-    };
-    init();
-  }, []);
 
   const loadUserData = async () => {
     const name = await SecureStore.getItemAsync("userName");
@@ -357,7 +398,6 @@ function UserDashboard() {
       const token = await SecureStore.getItemAsync("token");
       const userId = await SecureStore.getItemAsync("userId");
 
-      // ✅ token ya userId nahi mila toh silently return
       if (!token || !userId) {
         console.log("Token or userId missing — skipping fetch");
         return;
@@ -373,9 +413,15 @@ function UserDashboard() {
       else setTasks([]);
     } catch (error) {
       console.log("USER DASHBOARD TASK ERROR:", error);
-      // ✅ Alert nahi — silently fail
     }
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadUserData();
+      fetchTasks();
+    }, [])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -391,7 +437,7 @@ function UserDashboard() {
     [tasks],
   );
   const completedTasks = useMemo(
-    () => tasks.filter((t) => t.status === "Completed"),
+    () => tasks.filter((t) => t.status === "Completed" || t.status === "Approved"),
     [tasks],
   );
 
@@ -438,8 +484,6 @@ function UserDashboard() {
 
   const handleToggleTask = async (taskId: string, description: string) => {
     try {
-      console.log("description: ", description);
-
       const token = await SecureStore.getItemAsync("token");
       const res = await fetch(
         `${process.env.EXPO_PUBLIC_API_URL}/api/task/toggle/${taskId}`,
@@ -465,9 +509,10 @@ function UserDashboard() {
       style={styles.container}
       contentContainerStyle={{ paddingBottom: 20 }}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#5f00be"]} />
       }
     >
+    
       <View style={styles.islandWrapper}>
         <LinearGradient
           colors={["#5f00be", "#00A693"]}
@@ -664,17 +709,20 @@ function UserDashboard() {
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#d3d7df" },
+  // ✅ PaddingTop issue fix: dynamically setting status bar layout padding
   islandWrapper: {
     paddingHorizontal: 15,
-    paddingTop: 80,
+    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight ?? 0) + 15 : 60,
     backgroundColor: "#e8eaee",
+    paddingBottom: 15,
   },
   islandCard: {
     borderRadius: 25,
     paddingVertical: 20,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     backgroundColor: "rgba(255,255,255,0.05)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.08)",

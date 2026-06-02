@@ -13,12 +13,15 @@ const BASE_URL = apiUrl;
 
 type TaskStatus = "Pending" | "Completed" | "Approved" | "Reassigned";
 type AssignedUser = { _id: string; name: string; email: string; department?: string };
+type UserProgress = { user: { _id: string; name: string; email: string }; status: string; userDescription?: string }; 
 type Project = { _id: string; name: string };
 type Team = { _id: string; name: string };
 type Task = {
   _id: string; title: string; status: TaskStatus;
   userDescription: string; adminNote: string;
-  assignedTo: AssignedUser | null; project: Project | null;
+  assignedTo: AssignedUser[]; // Array configuration to match backend data
+  userProgress?: UserProgress[]; // Added for extracting the specific action-taker's name
+  project: Project | null;
   team: Team | null; updatedAt: string; createdAt: string;
   dueDate?: string | null;
 };
@@ -34,6 +37,21 @@ const getAvatarConfig = (name: string): { initials: string; colors: readonly [st
     : name.slice(0, 2).toUpperCase();
   const colorIndex = name.charCodeAt(0) % palettes.length;
   return { initials, colors: palettes[colorIndex] as readonly [string, string] };
+};
+
+// Helper function to safely extract the completion/assignment name
+const getTaskUserName = (task: Task): string => {
+  const completedUser = task.userProgress?.find(p => p.status === "Completed")?.user?.name;
+  if (completedUser) return completedUser;
+
+  if (Array.isArray(task.assignedTo) && task.assignedTo.length > 0) {
+    return task.assignedTo[0].name;
+  }
+
+  // @ts-ignore - backward compatibility fallback
+  if (task.assignedTo && task.assignedTo.name) return task.assignedTo.name;
+
+  return "Unknown User";
 };
 
 const timeAgo = (dateStr: string) => {
@@ -87,7 +105,6 @@ function UserTaskDoneScreen() {
       });
       if (!res.ok) throw new Error();
       const data: Task[] = await res.json();
-      // Sirf completed tasks filter karo
       setTasks(data.filter(t => t.status === "Completed" || t.status === "Approved"));
     } catch {
       Alert.alert("Error", "Tasks load nahi ho sake.");
@@ -107,7 +124,6 @@ function UserTaskDoneScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Top Bar */}
       <LinearGradient colors={["#081B43", "#0F2A5F"]} style={styles.topBar}>
         <View>
           <Text style={styles.topBarTitle}>Completed Tasks</Text>
@@ -138,16 +154,19 @@ function UserTaskDoneScreen() {
           {tasks.map(task => {
             const statusConfig = getStatusConfig(task.status);
             const projectName = task.project?.name ?? task.team?.name ?? "General";
+            const assignedUserName = getTaskUserName(task);
 
             return (
               <View key={task._id} style={[styles.userTaskCard, { borderLeftColor: statusConfig.border }]}>
-                {/* Title + Project */}
                 <View style={styles.userTaskHeader}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.userTaskTitle}>{task.title}</Text>
                     <View style={styles.userTaskMeta}>
                       <View style={styles.projectTag}>
                         <Text style={styles.projectTagText}>📁 {projectName}</Text>
+                      </View>
+                      <View style={[styles.projectTag, { backgroundColor: "#F3F4F6" }]}>
+                        <Text style={[styles.projectTagText, { color: "#4B5563" }]}>👤 {assignedUserName}</Text>
                       </View>
                       {task.dueDate && (
                         <View style={styles.dateTag}>
@@ -156,17 +175,14 @@ function UserTaskDoneScreen() {
                       )}
                     </View>
                   </View>
-                  {/* Status Badge */}
                   <View style={[styles.statusPill, { backgroundColor: statusConfig.bg }]}>
                     <View style={[styles.statusDot, { backgroundColor: statusConfig.dot }]} />
                     <Text style={[styles.statusText, { color: statusConfig.color }]}>{statusConfig.label}</Text>
                   </View>
                 </View>
 
-                {/* Time */}
                 <Text style={styles.userTaskTime}>Completed {timeAgo(task.updatedAt)}</Text>
 
-                {/* Admin Note (agar reassign feedback tha) */}
                 {!!task.adminNote && (
                   <View style={styles.adminNoteBox}>
                     <Text style={styles.adminNoteLabel}>Admin Feedback</Text>
@@ -183,7 +199,7 @@ function UserTaskDoneScreen() {
 }
 
 // ════════════════════════════════════════════════
-// ADMIN SCREEN — original code as is
+// ADMIN SCREEN
 // ════════════════════════════════════════════════
 function AdminTaskDoneScreen() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -282,7 +298,7 @@ function AdminTaskDoneScreen() {
   };
 
   const renderEntry = (task: Task) => {
-    const userName = task.assignedTo?.name ?? "Unknown User";
+    const userName = getTaskUserName(task); 
     const { initials, colors } = getAvatarConfig(userName);
     const statusConfig = getStatusConfig(task.status);
     const isMenuOpen = openMenuId === task._id;
@@ -341,6 +357,8 @@ function AdminTaskDoneScreen() {
     );
   };
 
+  const activeTaskUserName = activeTask ? getTaskUserName(activeTask) : "User";
+
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient colors={["#081B43", "#0F2A5F"]} style={styles.topBar}>
@@ -374,14 +392,14 @@ function AdminTaskDoneScreen() {
           <View style={styles.modalSheet}>
             <View style={styles.modalHandle} />
             <Text style={styles.modalTitle}>Review & Reassign Task</Text>
-            <Text style={styles.modalSub}>Adminfeedback  — task Reassigned User</Text>
+            <Text style={styles.modalSub}>Admin feedback  — task Reassigned User</Text>
             {activeTask && (
               <View style={styles.modalForBox}>
-                <LinearGradient colors={getAvatarConfig(activeTask.assignedTo?.name ?? "U").colors} style={styles.modalAvatar}>
-                  <Text style={styles.modalAvatarText}>{getAvatarConfig(activeTask.assignedTo?.name ?? "U").initials}</Text>
+                <LinearGradient colors={getAvatarConfig(activeTaskUserName).colors} style={styles.modalAvatar}>
+                  <Text style={styles.modalAvatarText}>{getAvatarConfig(activeTaskUserName).initials}</Text>
                 </LinearGradient>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.modalForName}>{activeTask.assignedTo?.name ?? "User"}</Text>
+                  <Text style={styles.modalForName}>{activeTaskUserName}</Text>
                   <Text style={styles.modalForTask} numberOfLines={1}>{activeTask.project?.name ?? activeTask.team?.name ?? "Task"}  ›  {activeTask.title}</Text>
                 </View>
               </View>
@@ -407,7 +425,7 @@ function AdminTaskDoneScreen() {
 
 // ─── Styles ───────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container:            { flex: 1, backgroundColor: "#EEF3FB" },
+  container:             { flex: 1, backgroundColor: "#EEF3FB" },
   topBar:               { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingTop: 90, paddingBottom: 14 },
   topBarTitle:          { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
   topBarSub:            { color: "rgba(255,255,255,0.6)", fontSize: 11, marginTop: 2 },
@@ -478,7 +496,6 @@ const styles = StyleSheet.create({
   btnSendGrad:          { paddingVertical: 13, alignItems: "center", justifyContent: "center" },
   btnSendText:          { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
 });
-
 
 
 
