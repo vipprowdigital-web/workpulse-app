@@ -20,7 +20,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect } from "expo-router";
-import * as SecureStore from "expo-secure-store";
+import { appStorage } from "@/utils/storage";
 import { apiUrl } from "@/config/env";
 
 type TaskItem = {
@@ -51,7 +51,7 @@ export default function TaskScreen() {
   const [role, setRole] = useState<"admin" | "user" | null>(null);
 
   useEffect(() => {
-    SecureStore.getItemAsync("role").then((r) =>
+    appStorage.getItem("role").then((r) =>
       setRole(r === "user" ? "user" : "admin"),
     );
   }, []);
@@ -112,8 +112,8 @@ function AdminTaskScreen() {
   );
 
   const loadReminders = async () => {
-    const adminId = await SecureStore.getItemAsync("adminId");
-    const stored = await SecureStore.getItemAsync(`admin_reminders_${adminId}`);
+    const adminId = await appStorage.getItem("adminId");
+    const stored = await appStorage.getItem(`admin_reminders_${adminId}`);
     if (stored) {
       try {
         setReminders(JSON.parse(stored));
@@ -122,8 +122,8 @@ function AdminTaskScreen() {
   };
 
   const saveReminders = async (updated: Reminder[]) => {
-    const adminId = await SecureStore.getItemAsync("adminId");
-    await SecureStore.setItemAsync(
+    const adminId = await appStorage.getItem("adminId");
+    await appStorage.setItem(
       `admin_reminders_${adminId}`,
       JSON.stringify(updated),
     );
@@ -179,8 +179,8 @@ function AdminTaskScreen() {
     try {
       setLoadingMyTasks(true);
 
-      const token = await SecureStore.getItemAsync("token");
-      const adminId = await SecureStore.getItemAsync("adminId");
+      const token = await appStorage.getItem("token");
+      const adminId = await appStorage.getItem("adminId");
 
       const res = await fetch(`${BASE_URL}/my/${adminId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -200,7 +200,7 @@ const fetchAssignedTaskHistory = async () => {
     setLoadingAssignedTasks(true);
     setAssignedTasks([]);
 
-    const token = await SecureStore.getItemAsync("token");
+    const token = await appStorage.getItem("token");
     if (!token) {
       console.log("Token missing context!");
       return;
@@ -239,7 +239,7 @@ const fetchAssignedTaskHistory = async () => {
     setSavingTask(true);
 
     try {
-      const token = await SecureStore.getItemAsync("token");
+      const token = await appStorage.getItem("token");
 
       const res = await fetch(`${BASE_URL}/self`, {
         method: "POST",
@@ -272,7 +272,7 @@ const fetchAssignedTaskHistory = async () => {
 
   const toggleTaskStatus = async (id: string) => {
     try {
-      const token = await SecureStore.getItemAsync("token");
+      const token = await appStorage.getItem("token");
 
       await fetch(`${BASE_URL}/toggle/${id}`, {
         method: "PUT",
@@ -994,8 +994,8 @@ function UserTaskScreen() {
     try {
       setLoading(true);
 
-      const token = await SecureStore.getItemAsync("token");
-      const userId = await SecureStore.getItemAsync("userId");
+      const token = await appStorage.getItem("token");
+      const userId = await appStorage.getItem("userId");
 
       if (!userId) {
         Alert.alert("Session Error", "Please login again");
@@ -1058,7 +1058,7 @@ function UserTaskScreen() {
 
   const handleToggleTask = async (taskId: string, description: string) => {
     try {
-      const token = await SecureStore.getItemAsync("token");
+      const token = await appStorage.getItem("token");
 
       const res = await fetch(`${BASE_URL}/toggle/${taskId}`, {
         method: "PUT",
@@ -1843,7 +1843,7 @@ const uS = StyleSheet.create({
 // import { LinearGradient } from "expo-linear-gradient";
 // import Button from "@/components/button";
 // import { router, useFocusEffect } from "expo-router";
-// import * as SecureStore from "expo-secure-store";
+// import { appStorage } from "@/utils/storage";
 
 // type TaskItem = {
 //   _id: string; title: string;
@@ -1863,7 +1863,7 @@ const uS = StyleSheet.create({
 //   const [role, setRole] = useState<"admin" | "user" | null>(null);
 
 //   useEffect(() => {
-//     SecureStore.getItemAsync("role").then(r => setRole(r === "user" ? "user" : "admin"));
+//     appStorage.getItem("role").then(r => setRole(r === "user" ? "user" : "admin"));
 //   }, []);
 
 //   if (role === null) return (
@@ -1903,16 +1903,16 @@ const uS = StyleSheet.create({
 //   }, []));
 
 //   const loadReminders = async () => {
-//     const adminId = await SecureStore.getItemAsync("adminId");
-//     const stored = await SecureStore.getItemAsync(`admin_reminders_${adminId}`);
+//     const adminId = await appStorage.getItem("adminId");
+//     const stored = await appStorage.getItem(`admin_reminders_${adminId}`);
 //     if (stored) {
 //       try { setReminders(JSON.parse(stored)); } catch {}
 //     }
 //   };
 
 //   const saveReminders = async (updated: Reminder[]) => {
-//     const adminId = await SecureStore.getItemAsync("adminId");
-//     await SecureStore.setItemAsync(`admin_reminders_${adminId}`, JSON.stringify(updated));
+//     const adminId = await appStorage.getItem("adminId");
+//     await appStorage.setItem(`admin_reminders_${adminId}`, JSON.stringify(updated));
 //     setReminders(updated);
 //   };
 
@@ -1949,8 +1949,8 @@ const uS = StyleSheet.create({
 //   const fetchMyTasks = async () => {
 //     try {
 //       setLoadingMyTasks(true);
-//       const token = await SecureStore.getItemAsync("token");
-//       const adminId = await SecureStore.getItemAsync("adminId");
+//       const token = await appStorage.getItem("token");
+//       const adminId = await appStorage.getItem("adminId");
 //       const res = await fetch(`${BASE_URL}/my/${adminId}`, {
 //         headers: { Authorization: `Bearer ${token}` },
 //       });
@@ -1965,7 +1965,7 @@ const uS = StyleSheet.create({
 
 //   const toggleTaskStatus = async (id: string) => {
 //     try {
-//       const token = await SecureStore.getItemAsync("token");
+//       const token = await appStorage.getItem("token");
 //       await fetch(`${BASE_URL}/toggle/${id}`, {
 //         method: "PUT",
 //         headers: { Authorization: `Bearer ${token}` },
@@ -2171,8 +2171,8 @@ const uS = StyleSheet.create({
 //   const fetchAssignedTasks = async () => {
 //     try {
 //       setLoading(true);
-//       const token = await SecureStore.getItemAsync("token");
-//       const userId = await SecureStore.getItemAsync("userId");
+//       const token = await appStorage.getItem("token");
+//       const userId = await appStorage.getItem("userId");
 //       if (!userId) { Alert.alert("Session Error", "Please login again"); return; }
 //       const res = await fetch(`${BASE_URL}/user/${userId}`, {
 //         headers: { Authorization: `Bearer ${token}` },
@@ -2201,7 +2201,7 @@ const uS = StyleSheet.create({
 
 //   const handleToggleTask = async (taskId: string, description: string) => {
 //     try {
-//       const token = await SecureStore.getItemAsync("token");
+//       const token = await appStorage.getItem("token");
 //       const res = await fetch(`${BASE_URL}/toggle/${taskId}`, {
 //         method: "PUT",
 //         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -2453,7 +2453,7 @@ const uS = StyleSheet.create({
 // import { LinearGradient } from "expo-linear-gradient";
 // import Button from "@/components/button";
 // import { router } from "expo-router";
-// import * as SecureStore from "expo-secure-store";
+// import { appStorage } from "@/utils/storage";
 
 // type TaskItem = {
 //   _id: string;
@@ -2472,7 +2472,7 @@ const uS = StyleSheet.create({
 
 //   useEffect(() => {
 //     const loadRole = async () => {
-//       const savedRole = await SecureStore.getItemAsync("role");
+//       const savedRole = await appStorage.getItem("role");
 //       setRole(savedRole === "user" ? "user" : "admin");
 //     };
 //     loadRole();
@@ -2497,8 +2497,8 @@ const uS = StyleSheet.create({
 //   const fetchMyTasks = async () => {
 //     try {
 //       setLoadingMyTasks(true);
-//       const token = await SecureStore.getItemAsync("token");
-//       const adminId = await SecureStore.getItemAsync("adminId");
+//       const token = await appStorage.getItem("token");
+//       const adminId = await appStorage.getItem("adminId");
 //       const res = await fetch(`${BASE_URL}/my/${adminId}`, {
 //         headers: { Authorization: `Bearer ${token}` },
 //       });
@@ -2514,8 +2514,8 @@ const uS = StyleSheet.create({
 //   const fetchTeamTasks = async () => {
 //     try {
 //       setLoadingTeamTasks(true);
-//       const token = await SecureStore.getItemAsync("token");
-//       const adminId = await SecureStore.getItemAsync("adminId");
+//       const token = await appStorage.getItem("token");
+//       const adminId = await appStorage.getItem("adminId");
 //       const res = await fetch(`${BASE_URL}/team/${adminId}`, {
 //         headers: { Authorization: `Bearer ${token}` },
 //       });
@@ -2530,7 +2530,7 @@ const uS = StyleSheet.create({
 
 //   const toggleTaskStatus = async (id: string) => {
 //     try {
-//       const token = await SecureStore.getItemAsync("token");
+//       const token = await appStorage.getItem("token");
 //       await fetch(`${BASE_URL}/toggle/${id}`, {
 //         method: "PUT",
 //         headers: { Authorization: `Bearer ${token}` },
@@ -2670,8 +2670,8 @@ const uS = StyleSheet.create({
 //   const fetchAssignedTasks = async () => {
 //     try {
 //       setLoading(true);
-//       const token = await SecureStore.getItemAsync("token");
-//       const userId = await SecureStore.getItemAsync("userId");
+//       const token = await appStorage.getItem("token");
+//       const userId = await appStorage.getItem("userId");
 
 //       if (!userId) {
 //         Alert.alert("Session Error", "Please login again");
@@ -2713,7 +2713,7 @@ const uS = StyleSheet.create({
 //   // ✅ Description ke saath toggle
 //   const handleToggleTask = async (taskId: string, description: string) => {
 //     try {
-//       const token = await SecureStore.getItemAsync("token");
+//       const token = await appStorage.getItem("token");
 //       const res = await fetch(`${BASE_URL}/toggle/${taskId}`, {
 //         method: "PUT",
 //         headers: {

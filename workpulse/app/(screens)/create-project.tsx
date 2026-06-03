@@ -13,7 +13,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
-import * as SecureStore from "expo-secure-store";
+import { appStorage } from "@/utils/storage";
 import {KeyboardAvoidingView} from "react-native";
 import { router } from "expo-router";
 import { apiUrl } from "@/config/env";
@@ -39,7 +39,7 @@ export default function CreateProject() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = await SecureStore.getItemAsync("token");
+        const token = await appStorage.getItem("token");
         if (!token) {
           Alert.alert("Error", "Login session missing. Please login again.");
           return;
@@ -90,8 +90,8 @@ export default function CreateProject() {
     }
 
     try {
-      const token = await SecureStore.getItemAsync("token");
-      const adminId = await SecureStore.getItemAsync("adminId");
+      const token = await appStorage.getItem("token");
+      const adminId = await appStorage.getItem("adminId");
 
       if (!token || !adminId) {
         Alert.alert("Error", "Login session missing. Please login again.");
@@ -545,7 +545,7 @@ const styles = StyleSheet.create({
 // } from "react-native";
 // import { LinearGradient } from "expo-linear-gradient";
 // import { useState, useEffect } from "react";
-// import * as SecureStore from "expo-secure-store";
+// import { appStorage } from "@/utils/storage";
 // import Button from "@/components/button";
 
 // type UserType = {
@@ -565,7 +565,7 @@ const styles = StyleSheet.create({
 //   useEffect(() => {
 //     const fetchData = async () => {
 //       try {
-//         const token = await SecureStore.getItemAsync("token");
+//         const token = await appStorage.getItem("token");
 
 //         if (!token) {
 //           Alert.alert("Error", "Login session missing. Please login again.");
@@ -622,8 +622,8 @@ const styles = StyleSheet.create({
 //     }
 
 //     try {
-//       const token = await SecureStore.getItemAsync("token");
-//       const adminId = await SecureStore.getItemAsync("adminId");
+//       const token = await appStorage.getItem("token");
+//       const adminId = await appStorage.getItem("adminId");
 
 //       if (!token || !adminId) {
 //         Alert.alert("Error", "Login session missing. Please login again.");

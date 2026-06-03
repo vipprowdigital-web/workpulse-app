@@ -13,7 +13,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
 import { KeyboardAvoidingView } from "react-native";
-import * as SecureStore from "expo-secure-store";
+import { appStorage } from "@/utils/storage";
 import { router } from "expo-router";
 import { apiUrl } from "@/config/env";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -48,7 +48,7 @@ export default function AssignedTasks() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = await SecureStore.getItemAsync("token");
+        const token = await appStorage.getItem("token");
         if (!token) {
           Alert.alert("Error", "Login session missing");
           return;
@@ -91,8 +91,8 @@ export default function AssignedTasks() {
     }
 
     try {
-      const token = await SecureStore.getItemAsync("token");
-      const adminId = await SecureStore.getItemAsync("adminId");
+      const token = await appStorage.getItem("token");
+      const adminId = await appStorage.getItem("adminId");
 
       const res = await fetch(`${apiUrl}/api/task`, {
         method: "POST",
@@ -623,7 +623,7 @@ const styles = StyleSheet.create({
 // } from "react-native";
 // import { LinearGradient } from "expo-linear-gradient";
 // import { useState, useEffect } from "react";
-// import * as SecureStore from "expo-secure-store";
+// import { appStorage } from "@/utils/storage";
 // import Button from "@/components/button";
 
 // type UserType = {
@@ -652,7 +652,7 @@ const styles = StyleSheet.create({
 //   useEffect(() => {
 //     const fetchData = async () => {
 //       try {
-//         const token = await SecureStore.getItemAsync("token");
+//         const token = await appStorage.getItem("token");
 
 //         if (!token) {
 //           Alert.alert("Error", "Login session missing");
@@ -692,8 +692,8 @@ const styles = StyleSheet.create({
 //     }
 
 //     try {
-//       const token = await SecureStore.getItemAsync("token");
-//       const adminId = await SecureStore.getItemAsync("adminId");
+//       const token = await appStorage.getItem("token");
+//       const adminId = await appStorage.getItem("adminId");
 
 //       const res = await fetch(`${apiUrl}/api/task`, {
 //         method: "POST",

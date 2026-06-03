@@ -5,7 +5,7 @@ import {
   Platform, Pressable, ActivityIndicator, RefreshControl, Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import * as SecureStore from "expo-secure-store";
+import { appStorage } from "@/utils/storage";
 import { useFocusEffect } from "expo-router";
 import { apiUrl } from "@/config/env";
 
@@ -76,7 +76,7 @@ export default function TaskDoneScreen() {
   const [role, setRole] = useState<"admin" | "user" | null>(null);
 
   useEffect(() => {
-    SecureStore.getItemAsync("role").then(r => setRole(r === "user" ? "user" : "admin"));
+    appStorage.getItem("role").then(r => setRole(r === "user" ? "user" : "admin"));
   }, []);
 
   if (role === null) return (
@@ -99,7 +99,7 @@ function UserTaskDoneScreen() {
 
   const fetchTasks = useCallback(async () => {
     try {
-      const token = await SecureStore.getItemAsync("token");
+      const token = await appStorage.getItem("token");
       const res = await fetch(`${BASE_URL}/api/task`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -212,7 +212,7 @@ function AdminTaskDoneScreen() {
   const [reviewError, setReviewError] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const getToken = async () => await SecureStore.getItemAsync("token");
+  const getToken = async () => await appStorage.getItem("token");
 
   const fetchFeed = useCallback(async () => {
     try {
@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
 //   Platform, Pressable, ActivityIndicator, RefreshControl, Alert,
 // } from "react-native";
 // import { LinearGradient } from "expo-linear-gradient";
-// import * as SecureStore from "expo-secure-store"; // ✅ SecureStore
+// import { appStorage } from "@/utils/storage"; // ✅ SecureStore
 
 // // ✅ .env se BASE_URL — apni .env file mein EXPO_PUBLIC_API_URL=http://192.168.x.x:5000/api likho
 // const BASE_URL = apiUrl;
@@ -557,7 +557,7 @@ const styles = StyleSheet.create({
 //   const [actionLoading, setActionLoading] = useState(false);
 
 //   // ✅ SecureStore se token lo — same as baaki files mein use kiya hai
-//   const getToken = async () => await SecureStore.getItemAsync("token");
+//   const getToken = async () => await appStorage.getItem("token");
 
 //   const fetchFeed = useCallback(async () => {
 //     try {

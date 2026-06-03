@@ -13,7 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState, useCallback } from "react";
-import * as SecureStore from "expo-secure-store";
+import { appStorage } from "@/utils/storage";
 import { router, useFocusEffect } from "expo-router";
 import { apiUrl } from "@/config/env";
 
@@ -70,7 +70,7 @@ export default function AccountScreen() {
 
   useEffect(() => {
     const loadRole = async () => {
-      const savedRole = await SecureStore.getItemAsync("role");
+      const savedRole = await appStorage.getItem("role");
       setRole(savedRole === "user" ? "user" : "admin");
     };
 
@@ -110,7 +110,7 @@ function AdminAccount() {
 
   const fetchAll = useCallback(async () => {
     try {
-      const token = await SecureStore.getItemAsync("token");
+      const token = await appStorage.getItem("token");
       const headers = { Authorization: `Bearer ${token}` };
 
       const profileRes = await fetch(`${API}/api/auth/me`, { headers });
@@ -174,7 +174,7 @@ function AdminAccount() {
 
     try {
       setCreatingDept(true);
-      const token = await SecureStore.getItemAsync("token");
+      const token = await appStorage.getItem("token");
 
       const res = await fetch(`${API}/api/department`, {
         method: "POST",
@@ -211,13 +211,13 @@ function AdminAccount() {
         text: "Logout",
         style: "destructive",
         onPress: async () => {
-          await SecureStore.deleteItemAsync("token");
-          await SecureStore.deleteItemAsync("role");
-          await SecureStore.deleteItemAsync("adminId");
-          await SecureStore.deleteItemAsync("adminName");
-          await SecureStore.deleteItemAsync("companyId");
-          await SecureStore.deleteItemAsync("userId");
-          await SecureStore.deleteItemAsync("userName");
+          await appStorage.deleteItem("token");
+          await appStorage.deleteItem("role");
+          await appStorage.deleteItem("adminId");
+          await appStorage.deleteItem("adminName");
+          await appStorage.deleteItem("companyId");
+          await appStorage.deleteItem("userId");
+          await appStorage.deleteItem("userName");
           router.replace("/(auth)/logout");
         },
       },
@@ -780,8 +780,8 @@ function UserAccount() {
 
   const fetchUserAccount = useCallback(async () => {
     try {
-      const token = await SecureStore.getItemAsync("token");
-      const userId = await SecureStore.getItemAsync("userId");
+      const token = await appStorage.getItem("token");
+      const userId = await appStorage.getItem("userId");
 
       const headers = { Authorization: `Bearer ${token}` };
 
@@ -827,10 +827,10 @@ function UserAccount() {
         text: "Logout",
         style: "destructive",
         onPress: async () => {
-          await SecureStore.deleteItemAsync("token");
-          await SecureStore.deleteItemAsync("role");
-          await SecureStore.deleteItemAsync("userId");
-          await SecureStore.deleteItemAsync("userName");
+          await appStorage.deleteItem("token");
+          await appStorage.deleteItem("role");
+          await appStorage.deleteItem("userId");
+          await appStorage.deleteItem("userName");
           
           router.replace("/(auth)/logout");
         },
@@ -1553,7 +1553,7 @@ const styles = StyleSheet.create({
 // import { Ionicons } from "@expo/vector-icons";
 // import { LinearGradient } from "expo-linear-gradient";
 // import { useEffect, useState, useCallback } from "react";
-// import * as SecureStore from "expo-secure-store";
+// import { appStorage } from "@/utils/storage";
 // import { router, useFocusEffect } from "expo-router";
 
 // type AdminProfile = { _id: string; companyName: string; email: string; phone: string; businessType: string; address: string; createdAt?: string };
@@ -1581,7 +1581,7 @@ const styles = StyleSheet.create({
 
 //   const fetchAll = useCallback(async () => {
 //     try {
-//       const token = await SecureStore.getItemAsync("token");
+//       const token = await appStorage.getItem("token");
 //       const headers = { Authorization: `Bearer ${token}` };
 
 //       const profileRes = await fetch(`${API}/api/auth/me`, { headers });
@@ -1636,7 +1636,7 @@ const styles = StyleSheet.create({
 //     if (!newDeptName.trim()) { Alert.alert("Validation", "Department name required"); return; }
 //     try {
 //       setCreatingDept(true);
-//       const token = await SecureStore.getItemAsync("token");
+//       const token = await appStorage.getItem("token");
 //       const res = await fetch(`${API}/api/department`, {
 //         method: "POST",
 //         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -1659,11 +1659,11 @@ const styles = StyleSheet.create({
 //     Alert.alert("Logout", "Kya aap logout karna chahte hain?", [
 //       { text: "Cancel", style: "cancel" },
 //       { text: "Logout", style: "destructive", onPress: async () => {
-//         await SecureStore.deleteItemAsync("token");
-//         await SecureStore.deleteItemAsync("role");
-//         await SecureStore.deleteItemAsync("adminId");
-//         await SecureStore.deleteItemAsync("adminName");
-//         await SecureStore.deleteItemAsync("companyId");
+//         await appStorage.deleteItem("token");
+//         await appStorage.deleteItem("role");
+//         await appStorage.deleteItem("adminId");
+//         await appStorage.deleteItem("adminName");
+//         await appStorage.deleteItem("companyId");
 //         router.replace("/");
 //       }},
 //     ]);

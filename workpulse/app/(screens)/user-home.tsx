@@ -10,7 +10,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
-import * as SecureStore from "expo-secure-store";
+import { appStorage } from "@/utils/storage";
 import { apiUrl } from "@/config/env";
 
 type TaskType = {
@@ -43,8 +43,8 @@ export default function UserHome() {
 
   const fetchTasks = async () => {
     try {
-      const token = await SecureStore.getItemAsync("token");
-      const userId = await SecureStore.getItemAsync("userId");
+      const token = await appStorage.getItem("token");
+      const userId = await appStorage.getItem("userId");
 
       if (!token || !userId) {
         Alert.alert("Error", "Login session missing");
@@ -111,7 +111,7 @@ export default function UserHome() {
 
   const handleToggleTask = async (taskId: string) => {
     try {
-      const token = await SecureStore.getItemAsync("token");
+      const token = await appStorage.getItem("token");
 
       const res = await fetch(`${apiUrl}/api/task/toggle/${taskId}`, {
         method: "PUT",

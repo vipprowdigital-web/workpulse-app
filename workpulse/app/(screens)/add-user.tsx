@@ -15,7 +15,7 @@ import {
   StatusBar,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import * as SecureStore from "expo-secure-store";
+import { appStorage } from "@/utils/storage";
 import { Ionicons } from "@expo/vector-icons";
 import Button from "@/components/button";
 import { apiUrl } from "@/config/env";
@@ -46,7 +46,7 @@ export default function AddUserScreen() {
 
   const fetchDepartments = async () => {
     try {
-      const token = await SecureStore.getItemAsync("token");
+      const token = await appStorage.getItem("token");
       const res = await fetch(`${API_BASE}/api/department`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -65,7 +65,7 @@ export default function AddUserScreen() {
 
     try {
       setCreatingDept(true);
-      const token = await SecureStore.getItemAsync("token");
+      const token = await appStorage.getItem("token");
 
       const res = await fetch(`${API_BASE}/api/department`, {
         method: "POST",
@@ -108,7 +108,7 @@ export default function AddUserScreen() {
     try {
       setLoading(true);
 
-      const token = await SecureStore.getItemAsync("token");
+      const token = await appStorage.getItem("token");
 
       if (!token) {
         Alert.alert("Error", "Admin token missing. Please login again.");

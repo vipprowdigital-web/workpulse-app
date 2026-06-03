@@ -9,7 +9,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { useRouter } from "expo-router";
-import * as SecureStore from "expo-secure-store";
+import { appStorage } from "@/utils/storage";
 import { LinearGradient } from "expo-linear-gradient";
 import { apiUrl } from "@/config/env";
 
@@ -53,14 +53,14 @@ export default function UserLogin() {
         return;
       }
 
-      await SecureStore.deleteItemAsync("adminName");
-      await SecureStore.deleteItemAsync("adminId");
-      await SecureStore.deleteItemAsync("companyId");
+      await appStorage.deleteItem("adminName");
+      await appStorage.deleteItem("adminId");
+      await appStorage.deleteItem("companyId");
 
-      await SecureStore.setItemAsync("token", data.token);
-      await SecureStore.setItemAsync("role", "user");
-      await SecureStore.setItemAsync("userId", data.user._id);
-      await SecureStore.setItemAsync("userName", data.user.name || "User");
+      await appStorage.setItem("token", data.token);
+      await appStorage.setItem("role", "user");
+      await appStorage.setItem("userId", data.user._id);
+      await appStorage.setItem("userName", data.user.name || "User");
 
       Alert.alert("Success", "Login successful");
 

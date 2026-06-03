@@ -12,7 +12,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import * as SecureStore from "expo-secure-store";
+import { appStorage } from "@/utils/storage";
 import {KeyboardAvoidingView,Platform,} from "react-native";
 import Button from "@/components/button";
 import { apiUrl } from "@/config/env";
@@ -27,8 +27,8 @@ export default function AuthScreen() {
 
   useEffect(() => {
     const clearSession = async () => {
-      await SecureStore.deleteItemAsync("token");
-      await SecureStore.deleteItemAsync("role");
+      await appStorage.deleteItem("token");
+      await appStorage.deleteItem("role");
       setChecking(false);
     };
     clearSession();
@@ -68,14 +68,14 @@ export default function AuthScreen() {
         Alert.alert("Access Denied", "Only admin can login here");
         return;
       }
-      await SecureStore.deleteItemAsync("userId");
-      await SecureStore.deleteItemAsync("userName");
-      await SecureStore.setItemAsync("token", data.token);
-      await SecureStore.setItemAsync("role", "admin");
-      await SecureStore.setItemAsync("adminId", data.admin._id);
-      await SecureStore.setItemAsync("companyId", data.admin._id);
-      await SecureStore.setItemAsync("adminEmail", data.admin.email || "");
-      await SecureStore.setItemAsync("adminName", data.admin.companyName);
+      await appStorage.deleteItem("userId");
+      await appStorage.deleteItem("userName");
+      await appStorage.setItem("token", data.token);
+      await appStorage.setItem("role", "admin");
+      await appStorage.setItem("adminId", data.admin._id);
+      await appStorage.setItem("companyId", data.admin._id);
+      await appStorage.setItem("adminEmail", data.admin.email || "");
+      await appStorage.setItem("adminName", data.admin.companyName);
       router.replace("/(tabs)");
     } catch (error) {
       Alert.alert("Error", "Unable to connect to server");
@@ -102,13 +102,13 @@ export default function AuthScreen() {
         Alert.alert("Access Denied", "Only user can login here");
         return;
       }
-      await SecureStore.deleteItemAsync("adminName");
-      await SecureStore.deleteItemAsync("adminId");
-      await SecureStore.deleteItemAsync("companyId");
-      await SecureStore.setItemAsync("token", data.token);
-      await SecureStore.setItemAsync("role", "user");
-      await SecureStore.setItemAsync("userId", data.user._id);
-      await SecureStore.setItemAsync("userName", data.user.name || "User");
+      await appStorage.deleteItem("adminName");
+      await appStorage.deleteItem("adminId");
+      await appStorage.deleteItem("companyId");
+      await appStorage.setItem("token", data.token);
+      await appStorage.setItem("role", "user");
+      await appStorage.setItem("userId", data.user._id);
+      await appStorage.setItem("userName", data.user.name || "User");
       router.replace("/(tabs)");
     } catch (error) {
       Alert.alert("Error", "Unable to connect to server");
@@ -263,6 +263,7 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     backgroundColor: "#ccdbf7",
+    alignItems: Platform.OS === "web" ? "center" : "stretch",
     padding: 20,
     justifyContent: "center",
   },
@@ -345,7 +346,7 @@ const styles = StyleSheet.create({
 // import { useRouter } from "expo-router";
 // import { Ionicons } from "@expo/vector-icons";
 // import { LinearGradient } from "expo-linear-gradient";
-// import * as SecureStore from "expo-secure-store";
+// import { appStorage } from "@/utils/storage";
 // import Button from "@/components/button";
 
 // export default function AuthScreen() {
@@ -357,14 +358,14 @@ const styles = StyleSheet.create({
 //   // ✅ Auto login — agar token hai aur forceLogout nahi hai
 //   useEffect(() => {
 //     const checkAuth = async () => {
-//       const forceLogout = await SecureStore.getItemAsync("forceLogout");
+//       const forceLogout = await appStorage.getItem("forceLogout");
 //       if (forceLogout === "true") {
 //         // Logout hua tha — yahan rukna hai, tabs pe nahi jana
-//         await SecureStore.deleteItemAsync("forceLogout");
+//         await appStorage.deleteItem("forceLogout");
 //         return;
 //       }
-//       const token = await SecureStore.getItemAsync("token");
-//       const role = await SecureStore.getItemAsync("role");
+//       const token = await appStorage.getItem("token");
+//       const role = await appStorage.getItem("role");
 //       if (token && role) {
 //         router.replace("/(tabs)");
 //       }
@@ -388,14 +389,14 @@ const styles = StyleSheet.create({
 //       if (data.role !== "admin" || !data.admin || !data.token) {
 //         Alert.alert("Access Denied", "Only admin can login here"); return;
 //       }
-//       await SecureStore.deleteItemAsync("userId");
-//       await SecureStore.deleteItemAsync("userName");
-//       await SecureStore.setItemAsync("token", data.token);
-//       await SecureStore.setItemAsync("role", "admin");
-//       await SecureStore.setItemAsync("adminId", data.admin._id);
-//       await SecureStore.setItemAsync("companyId", data.admin._id);
-//       await SecureStore.setItemAsync("adminEmail", data.admin.email || "");
-//       await SecureStore.setItemAsync("adminName", data.admin.companyName);
+//       await appStorage.deleteItem("userId");
+//       await appStorage.deleteItem("userName");
+//       await appStorage.setItem("token", data.token);
+//       await appStorage.setItem("role", "admin");
+//       await appStorage.setItem("adminId", data.admin._id);
+//       await appStorage.setItem("companyId", data.admin._id);
+//       await appStorage.setItem("adminEmail", data.admin.email || "");
+//       await appStorage.setItem("adminName", data.admin.companyName);
 //       router.replace("/(tabs)");
 //     } catch (error) {
 //       console.log("ADMIN LOGIN ERROR:", error);
@@ -419,13 +420,13 @@ const styles = StyleSheet.create({
 //       if (data.role !== "user" || !data.user || !data.token) {
 //         Alert.alert("Access Denied", "Only user can login here"); return;
 //       }
-//       await SecureStore.deleteItemAsync("adminName");
-//       await SecureStore.deleteItemAsync("adminId");
-//       await SecureStore.deleteItemAsync("companyId");
-//       await SecureStore.setItemAsync("token", data.token);
-//       await SecureStore.setItemAsync("role", "user");
-//       await SecureStore.setItemAsync("userId", data.user._id);
-//       await SecureStore.setItemAsync("userName", data.user.name || "User");
+//       await appStorage.deleteItem("adminName");
+//       await appStorage.deleteItem("adminId");
+//       await appStorage.deleteItem("companyId");
+//       await appStorage.setItem("token", data.token);
+//       await appStorage.setItem("role", "user");
+//       await appStorage.setItem("userId", data.user._id);
+//       await appStorage.setItem("userName", data.user.name || "User");
 //       router.replace("/(tabs)");
 //     } catch (error) {
 //       console.log("USER LOGIN ERROR:", error);
@@ -618,7 +619,7 @@ const styles = StyleSheet.create({
 // import { useRouter } from "expo-router";
 // import { Ionicons } from "@expo/vector-icons";
 // import { LinearGradient } from "expo-linear-gradient";
-// import * as SecureStore from "expo-secure-store";
+// import { appStorage } from "@/utils/storage";
 // import Button from "@/components/button";
 
 // export default function AuthScreen() {
@@ -645,14 +646,14 @@ const styles = StyleSheet.create({
 //       if (data.role !== "admin" || !data.admin || !data.token) {
 //         Alert.alert("Access Denied", "Only admin can login here"); return;
 //       }
-//       await SecureStore.deleteItemAsync("userId");
-//       await SecureStore.deleteItemAsync("userName");
-//       await SecureStore.setItemAsync("token", data.token);
-//       await SecureStore.setItemAsync("role", "admin");
-//       await SecureStore.setItemAsync("adminId", data.admin._id);
-//       await SecureStore.setItemAsync("companyId", data.admin._id);
-//       await SecureStore.setItemAsync("adminEmail", data.admin.email || "");
-//       await SecureStore.setItemAsync("adminName", data.admin.companyName);
+//       await appStorage.deleteItem("userId");
+//       await appStorage.deleteItem("userName");
+//       await appStorage.setItem("token", data.token);
+//       await appStorage.setItem("role", "admin");
+//       await appStorage.setItem("adminId", data.admin._id);
+//       await appStorage.setItem("companyId", data.admin._id);
+//       await appStorage.setItem("adminEmail", data.admin.email || "");
+//       await appStorage.setItem("adminName", data.admin.companyName);
 //       router.replace("/(tabs)");
 //     } catch (error) {
 //       console.log("ADMIN LOGIN ERROR:", error);
@@ -677,13 +678,13 @@ const styles = StyleSheet.create({
 //       if (data.role !== "user" || !data.user || !data.token) {
 //         Alert.alert("Access Denied", "Only user can login here"); return;
 //       }
-//       await SecureStore.deleteItemAsync("adminName");
-//       await SecureStore.deleteItemAsync("adminId");
-//       await SecureStore.deleteItemAsync("companyId");
-//       await SecureStore.setItemAsync("token", data.token);
-//       await SecureStore.setItemAsync("role", "user");
-//       await SecureStore.setItemAsync("userId", data.user._id);
-//       await SecureStore.setItemAsync("userName", data.user.name || "User");
+//       await appStorage.deleteItem("adminName");
+//       await appStorage.deleteItem("adminId");
+//       await appStorage.deleteItem("companyId");
+//       await appStorage.setItem("token", data.token);
+//       await appStorage.setItem("role", "user");
+//       await appStorage.setItem("userId", data.user._id);
+//       await appStorage.setItem("userName", data.user.name || "User");
 //       router.replace("/(tabs)");
 //     } catch (error) {
 //       console.log("USER LOGIN ERROR:", error);
@@ -883,7 +884,7 @@ const styles = StyleSheet.create({
 // import { useRouter } from "expo-router";
 // import { Ionicons } from "@expo/vector-icons";
 // import { LinearGradient } from "expo-linear-gradient";
-// import * as SecureStore from "expo-secure-store";
+// import { appStorage } from "@/utils/storage";
 // import Button from "@/components/button";
 
 // export default function AuthScreen() {
@@ -923,12 +924,12 @@ const styles = StyleSheet.create({
 //         return;
 //       }
 
-//       await SecureStore.setItemAsync("token", data.token);
-//       await SecureStore.setItemAsync("role", "admin");
-//       await SecureStore.setItemAsync("adminId", data.admin._id);
-//       await SecureStore.setItemAsync("companyId", data.admin._id);
-//       await SecureStore.setItemAsync("adminEmail", data.admin.email || "");
-//       await SecureStore.setItemAsync("adminName", data.admin.companyName);
+//       await appStorage.setItem("token", data.token);
+//       await appStorage.setItem("role", "admin");
+//       await appStorage.setItem("adminId", data.admin._id);
+//       await appStorage.setItem("companyId", data.admin._id);
+//       await appStorage.setItem("adminEmail", data.admin.email || "");
+//       await appStorage.setItem("adminName", data.admin.companyName);
 
 //       router.replace("/(tabs)");
 //     } catch (error) {
@@ -1145,7 +1146,7 @@ const styles = StyleSheet.create({
 // // import { useRouter } from "expo-router";
 // // import { Ionicons } from "@expo/vector-icons";
 // // import { LinearGradient } from "expo-linear-gradient";
-// // import * as SecureStore from "expo-secure-store";
+// // import { appStorage } from "@/utils/storage";
 // // import Button from "@/components/button";
 
 // // export default function AuthScreen() {
@@ -1157,14 +1158,14 @@ const styles = StyleSheet.create({
 // //   // ✅ Auto login — agar token hai aur forceLogout nahi hai
 // //   useEffect(() => {
 // //     const checkAuth = async () => {
-// //       const forceLogout = await SecureStore.getItemAsync("forceLogout");
+// //       const forceLogout = await appStorage.getItem("forceLogout");
 // //       if (forceLogout === "true") {
 // //         // Logout hua tha — yahan rukna hai, tabs pe nahi jana
-// //         await SecureStore.deleteItemAsync("forceLogout");
+// //         await appStorage.deleteItem("forceLogout");
 // //         return;
 // //       }
-// //       const token = await SecureStore.getItemAsync("token");
-// //       const role = await SecureStore.getItemAsync("role");
+// //       const token = await appStorage.getItem("token");
+// //       const role = await appStorage.getItem("role");
 // //       if (token && role) {
 // //         router.replace("/(tabs)");
 // //       }
@@ -1188,14 +1189,14 @@ const styles = StyleSheet.create({
 // //       if (data.role !== "admin" || !data.admin || !data.token) {
 // //         Alert.alert("Access Denied", "Only admin can login here"); return;
 // //       }
-// //       await SecureStore.deleteItemAsync("userId");
-// //       await SecureStore.deleteItemAsync("userName");
-// //       await SecureStore.setItemAsync("token", data.token);
-// //       await SecureStore.setItemAsync("role", "admin");
-// //       await SecureStore.setItemAsync("adminId", data.admin._id);
-// //       await SecureStore.setItemAsync("companyId", data.admin._id);
-// //       await SecureStore.setItemAsync("adminEmail", data.admin.email || "");
-// //       await SecureStore.setItemAsync("adminName", data.admin.companyName);
+// //       await appStorage.deleteItem("userId");
+// //       await appStorage.deleteItem("userName");
+// //       await appStorage.setItem("token", data.token);
+// //       await appStorage.setItem("role", "admin");
+// //       await appStorage.setItem("adminId", data.admin._id);
+// //       await appStorage.setItem("companyId", data.admin._id);
+// //       await appStorage.setItem("adminEmail", data.admin.email || "");
+// //       await appStorage.setItem("adminName", data.admin.companyName);
 // //       router.replace("/(tabs)");
 // //     } catch (error) {
 // //       console.log("ADMIN LOGIN ERROR:", error);
@@ -1219,13 +1220,13 @@ const styles = StyleSheet.create({
 // //       if (data.role !== "user" || !data.user || !data.token) {
 // //         Alert.alert("Access Denied", "Only user can login here"); return;
 // //       }
-// //       await SecureStore.deleteItemAsync("adminName");
-// //       await SecureStore.deleteItemAsync("adminId");
-// //       await SecureStore.deleteItemAsync("companyId");
-// //       await SecureStore.setItemAsync("token", data.token);
-// //       await SecureStore.setItemAsync("role", "user");
-// //       await SecureStore.setItemAsync("userId", data.user._id);
-// //       await SecureStore.setItemAsync("userName", data.user.name || "User");
+// //       await appStorage.deleteItem("adminName");
+// //       await appStorage.deleteItem("adminId");
+// //       await appStorage.deleteItem("companyId");
+// //       await appStorage.setItem("token", data.token);
+// //       await appStorage.setItem("role", "user");
+// //       await appStorage.setItem("userId", data.user._id);
+// //       await appStorage.setItem("userName", data.user.name || "User");
 // //       router.replace("/(tabs)");
 // //     } catch (error) {
 // //       console.log("USER LOGIN ERROR:", error);
@@ -1418,7 +1419,7 @@ const styles = StyleSheet.create({
 // // import { useRouter } from "expo-router";
 // // import { Ionicons } from "@expo/vector-icons";
 // // import { LinearGradient } from "expo-linear-gradient";
-// // import * as SecureStore from "expo-secure-store";
+// // import { appStorage } from "@/utils/storage";
 // // import Button from "@/components/button";
 
 // // export default function AuthScreen() {
@@ -1445,14 +1446,14 @@ const styles = StyleSheet.create({
 // //       if (data.role !== "admin" || !data.admin || !data.token) {
 // //         Alert.alert("Access Denied", "Only admin can login here"); return;
 // //       }
-// //       await SecureStore.deleteItemAsync("userId");
-// //       await SecureStore.deleteItemAsync("userName");
-// //       await SecureStore.setItemAsync("token", data.token);
-// //       await SecureStore.setItemAsync("role", "admin");
-// //       await SecureStore.setItemAsync("adminId", data.admin._id);
-// //       await SecureStore.setItemAsync("companyId", data.admin._id);
-// //       await SecureStore.setItemAsync("adminEmail", data.admin.email || "");
-// //       await SecureStore.setItemAsync("adminName", data.admin.companyName);
+// //       await appStorage.deleteItem("userId");
+// //       await appStorage.deleteItem("userName");
+// //       await appStorage.setItem("token", data.token);
+// //       await appStorage.setItem("role", "admin");
+// //       await appStorage.setItem("adminId", data.admin._id);
+// //       await appStorage.setItem("companyId", data.admin._id);
+// //       await appStorage.setItem("adminEmail", data.admin.email || "");
+// //       await appStorage.setItem("adminName", data.admin.companyName);
 // //       router.replace("/(tabs)");
 // //     } catch (error) {
 // //       console.log("ADMIN LOGIN ERROR:", error);
@@ -1477,13 +1478,13 @@ const styles = StyleSheet.create({
 // //       if (data.role !== "user" || !data.user || !data.token) {
 // //         Alert.alert("Access Denied", "Only user can login here"); return;
 // //       }
-// //       await SecureStore.deleteItemAsync("adminName");
-// //       await SecureStore.deleteItemAsync("adminId");
-// //       await SecureStore.deleteItemAsync("companyId");
-// //       await SecureStore.setItemAsync("token", data.token);
-// //       await SecureStore.setItemAsync("role", "user");
-// //       await SecureStore.setItemAsync("userId", data.user._id);
-// //       await SecureStore.setItemAsync("userName", data.user.name || "User");
+// //       await appStorage.deleteItem("adminName");
+// //       await appStorage.deleteItem("adminId");
+// //       await appStorage.deleteItem("companyId");
+// //       await appStorage.setItem("token", data.token);
+// //       await appStorage.setItem("role", "user");
+// //       await appStorage.setItem("userId", data.user._id);
+// //       await appStorage.setItem("userName", data.user.name || "User");
 // //       router.replace("/(tabs)");
 // //     } catch (error) {
 // //       console.log("USER LOGIN ERROR:", error);
@@ -1683,7 +1684,7 @@ const styles = StyleSheet.create({
 // // import { useRouter } from "expo-router";
 // // import { Ionicons } from "@expo/vector-icons";
 // // import { LinearGradient } from "expo-linear-gradient";
-// // import * as SecureStore from "expo-secure-store";
+// // import { appStorage } from "@/utils/storage";
 // // import Button from "@/components/button";
 
 // // export default function AuthScreen() {
@@ -1723,12 +1724,12 @@ const styles = StyleSheet.create({
 // //         return;
 // //       }
 
-// //       await SecureStore.setItemAsync("token", data.token);
-// //       await SecureStore.setItemAsync("role", "admin");
-// //       await SecureStore.setItemAsync("adminId", data.admin._id);
-// //       await SecureStore.setItemAsync("companyId", data.admin._id);
-// //       await SecureStore.setItemAsync("adminEmail", data.admin.email || "");
-// //       await SecureStore.setItemAsync("adminName", data.admin.companyName);
+// //       await appStorage.setItem("token", data.token);
+// //       await appStorage.setItem("role", "admin");
+// //       await appStorage.setItem("adminId", data.admin._id);
+// //       await appStorage.setItem("companyId", data.admin._id);
+// //       await appStorage.setItem("adminEmail", data.admin.email || "");
+// //       await appStorage.setItem("adminName", data.admin.companyName);
 
 // //       router.replace("/(tabs)");
 // //     } catch (error) {

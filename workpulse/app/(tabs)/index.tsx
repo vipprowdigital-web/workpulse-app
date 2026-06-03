@@ -18,7 +18,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Button from "@/components/button";
 import { useEffect, useMemo, useState, useCallback } from "react";
-import * as SecureStore from "expo-secure-store";
+import { appStorage } from "@/utils/storage";
 import { router, useFocusEffect } from "expo-router";
 
 type TaskType = {
@@ -46,7 +46,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     const loadRole = async () => {
-      const savedRole = await SecureStore.getItemAsync("role");
+      const savedRole = await appStorage.getItem("role");
       setRole(savedRole === "user" ? "user" : "admin");
     };
     loadRole();
@@ -88,7 +88,7 @@ function AdminDashboard() {
   const [reviewCount, setReviewCount] = useState(0);
 
   const loadAdminData = async () => {
-    const name = await SecureStore.getItemAsync("adminName");
+    const name = await appStorage.getItem("adminName");
     setAdminName(name || "Admin");
     const today = new Date();
     setCurrentDate(
@@ -102,7 +102,7 @@ function AdminDashboard() {
 
   const fetchProjectStatus = async () => {
     try {
-      const token = await SecureStore.getItemAsync("token");
+      const token = await appStorage.getItem("token");
       const res = await fetch(
         `${process.env.EXPO_PUBLIC_API_URL}/api/project/status`,
         {
@@ -127,7 +127,7 @@ function AdminDashboard() {
   // ✅ Review Count Fetch Mechanism (Completed and Pending for Approval)
   const fetchReviewCount = async () => {
     try {
-      const token = await SecureStore.getItemAsync("token");
+      const token = await appStorage.getItem("token");
       const res = await fetch(
         `${process.env.EXPO_PUBLIC_API_URL}/api/task/feed/completed`,
         {
@@ -381,7 +381,7 @@ function UserDashboard() {
   const [descText, setDescText] = useState("");
 
   const loadUserData = async () => {
-    const name = await SecureStore.getItemAsync("userName");
+    const name = await appStorage.getItem("userName");
     setUserName(name || "User");
     const today = new Date();
     setCurrentDate(
@@ -395,8 +395,8 @@ function UserDashboard() {
 
   const fetchTasks = async () => {
     try {
-      const token = await SecureStore.getItemAsync("token");
-      const userId = await SecureStore.getItemAsync("userId");
+      const token = await appStorage.getItem("token");
+      const userId = await appStorage.getItem("userId");
 
       if (!token || !userId) {
         console.log("Token or userId missing — skipping fetch");
@@ -484,7 +484,7 @@ function UserDashboard() {
 
   const handleToggleTask = async (taskId: string, description: string) => {
     try {
-      const token = await SecureStore.getItemAsync("token");
+      const token = await appStorage.getItem("token");
       const res = await fetch(
         `${process.env.EXPO_PUBLIC_API_URL}/api/task/toggle/${taskId}`,
         {
@@ -1000,7 +1000,7 @@ const styles = StyleSheet.create({
 // import { Ionicons } from "@expo/vector-icons";
 // import Button from "@/components/button";
 // import { useEffect, useMemo, useState } from "react";
-// import * as SecureStore from "expo-secure-store";
+// import { appStorage } from "@/utils/storage";
 // import { router } from "expo-router";
 // import { apiUrl } from "@/config/env";
 
@@ -1029,7 +1029,7 @@ const styles = StyleSheet.create({
 
 //   useEffect(() => {
 //     const loadRole = async () => {
-//       const savedRole = await SecureStore.getItemAsync("role");
+//       const savedRole = await appStorage.getItem("role");
 //       setRole(savedRole === "user" ? "user" : "admin");
 //     };
 //     loadRole();
@@ -1065,7 +1065,7 @@ const styles = StyleSheet.create({
 //   }, []);
 
 //   const loadAdminData = async () => {
-//     const name = await SecureStore.getItemAsync("adminName");
+//     const name = await appStorage.getItem("adminName");
 //     setAdminName(name || "Admin");
 //     const today = new Date();
 //     setCurrentDate(today.toLocaleDateString("en-IN", {
@@ -1075,7 +1075,7 @@ const styles = StyleSheet.create({
 
 //   const fetchProjectStatus = async () => {
 //     try {
-//       const token = await SecureStore.getItemAsync("token");
+//       const token = await appStorage.getItem("token");
 //       const res = await fetch(`${apiUrl}/api/project/status`, {
 //         headers: { Authorization: `Bearer ${token}` },
 //       });
@@ -1253,7 +1253,7 @@ const styles = StyleSheet.create({
 //   }, []);
 
 //   const loadUserData = async () => {
-//     const name = await SecureStore.getItemAsync("userName");
+//     const name = await appStorage.getItem("userName");
 //     setUserName(name || "User");
 //     const today = new Date();
 //     setCurrentDate(today.toLocaleDateString("en-IN", {
@@ -1263,8 +1263,8 @@ const styles = StyleSheet.create({
 
 //   const fetchTasks = async () => {
 //     try {
-//       const token = await SecureStore.getItemAsync("token");
-//       const userId = await SecureStore.getItemAsync("userId");
+//       const token = await appStorage.getItem("token");
+//       const userId = await appStorage.getItem("userId");
 
 //       // ✅ token ya userId nahi mila toh silently return
 //       if (!token || !userId) {
@@ -1333,7 +1333,7 @@ const styles = StyleSheet.create({
 //     try {
 //       console.log("description: ", description);
 
-//       const token = await SecureStore.getItemAsync("token");
+//       const token = await appStorage.getItem("token");
 //       const res = await fetch(
 //         `${apiUrl}/api/task/toggle/${taskId}`,
 //         {
